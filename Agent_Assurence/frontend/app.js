@@ -5,9 +5,9 @@
 
 // auth.js resolves the API origin so the SameSite session cookie is valid.
 const API_BASE = (window.Auth && window.Auth.apiBase)
-  || (window.location.origin.includes('8000')
-    ? window.location.origin
-    : 'http://127.0.0.1:8000');
+  || (window.location.pathname.startsWith('/Agent_Assurence')
+    ? window.location.origin + '/Agent_Assurence'
+    : window.location.origin);
 
 // Global State
 let currentTab = 'overview';

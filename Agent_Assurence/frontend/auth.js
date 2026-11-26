@@ -19,8 +19,10 @@
     // (not 127.0.0.1:8000) or the session cookie would be dropped.
     function resolveApiBase() {
         const loc = window.location;
-        if (loc.port === '8000') return loc.origin;
-        if (loc.hostname === 'localhost' || loc.hostname === '127.0.0.1') {
+        if (loc.pathname.startsWith('/Agent_Assurence')) {
+            return loc.origin + '/Agent_Assurence';
+        }
+        if (loc.port === '5500') {
             return loc.protocol + '//' + loc.hostname + ':8000';
         }
         return loc.origin;

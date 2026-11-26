@@ -17,12 +17,12 @@ PORTAL_HTML = Path(__file__).with_name("index.html")
 
 ROUTES: dict[str, tuple[str, int, bool]] = {
     # prefix: (host, port, strip_prefix)
-    "Agent_Assurence": ("127.0.0.1", 8001, True),
-    "AI-operations-Diagonostic": ("127.0.0.1", 3001, False),
-    "Construction-variation-tracker": ("127.0.0.1", 5173, False),
-    "Contract-Invoice-Leakage-Finder": ("127.0.0.1", 5174, False),
-    "Industry-Specific-Lead-to-Order-Agent": ("127.0.0.1", 5175, False),
-    "Procurement-Quote-Comparison-Agent": ("127.0.0.1", 3002, False),
+    "Agent_Assurence": ("127.0.0.1", int(os.getenv("AGENT_ASSURENCE_PORT", "8000")), True),
+    "AI-operations-Diagonostic": ("127.0.0.1", int(os.getenv("AI_OPS_PORT", "3001")), False),
+    "Construction-variation-tracker": ("127.0.0.1", int(os.getenv("CONSTRUCTION_PORT", "5173")), False),
+    "Contract-Invoice-Leakage-Finder": ("127.0.0.1", int(os.getenv("LEAKAGE_PORT", "5174")), False),
+    "Industry-Specific-Lead-to-Order-Agent": ("127.0.0.1", int(os.getenv("LEAD_TO_ORDER_PORT", "5175")), False),
+    "Procurement-Quote-Comparison-Agent": ("127.0.0.1", int(os.getenv("PROCUREAI_PORT", "3002")), False),
 }
 
 HOP_BY_HOP = {
