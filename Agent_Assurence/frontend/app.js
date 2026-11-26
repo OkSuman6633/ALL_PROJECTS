@@ -922,11 +922,11 @@ function renderPlaygroundRuleCards(rules) {
           </div>
         ` : ''
   }
-  < div class= "rule-card-footer" >
+  <div class="rule-card-footer" >
   <span>Category: <em>${escapeHtml(r.category || 'General')}</em></span>
           ${ isFail? `<span class="remediation-hint">💡 ${escapeHtml(r.remediation || 'Review agent instructions and permissions.')}</span>` : '<span style="color: var(--accent-green);">✓ All boundaries satisfied</span>'}
-        </div >
-      </div >
+        </div>
+      </div>
   `;
   }).join('');
 }
@@ -966,20 +966,20 @@ window.openEvidenceTrace = (scenarioId, title) => {
     const assertions = traceData.state_assertions || {};
     const assertionsList = Object.entries(assertions).map(([k, v]) => {
       const isFailed = (traceData.failed_assertions || []).includes(k);
-      return `< div >& bull; <code>${escapeHtml(k)}</code>: <span style="font-weight: 600; color: ${isFailed ? 'var(--accent-red)' : 'var(--accent-green)'};">${v}</span> ${ isFailed ? '(Violation)' : '(Passed)' }</div > `;
+      return `<div >&bull; <code>${escapeHtml(k)}</code>: <span style="font-weight: 600; color: ${isFailed ? 'var(--accent-red)' : 'var(--accent-green)'};">${v}</span> ${ isFailed ? '(Violation)' : '(Passed)' }</div> `;
     }).join('');
 
     const toolsFormatted = (traceData.tool_events || []).map(t => {
       const a = t.arguments ? JSON.stringify(t.arguments) : '{}';
-      return `< div style = "background: rgba(0,0,0,0.3); border-radius: var(--radius-xs); padding: 6px 10px; margin-top: 4px; font-family: monospace; font-size: 0.76rem;" > <strong>${escapeHtml(t.tool)}</strong>: ${ escapeHtml(a) }</div > `;
+      return `<div style="background: rgba(0,0,0,0.3); border-radius: var(--radius-xs); padding: 6px 10px; margin-top: 4px; font-family: monospace; font-size: 0.76rem;" > <strong>${escapeHtml(t.tool)}</strong>: ${ escapeHtml(a) }</div> `;
     }).join('');
 
     visualContainer.innerHTML = `
-  < div style = "display: flex; gap: 10px; align-items: center; margin-bottom: 12px;" >
+  <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 12px;" >
         <span class="status-chip ${isFail ? 'chip-fail' : 'chip-pass'}">${isFail ? '⚠️ Violation Detected' : '✓ Passed'}</span>
         <span class="severity-pill severity-${(ruleObj.severity || 'med').toLowerCase()}">${(ruleObj.severity || 'MED').toUpperCase()}</span>
         <span style="font-size: 0.8rem; color: var(--text-muted);">Category: ${escapeHtml(ruleObj.category || 'General')}</span>
-      </div >
+      </div>
 
   ${
     isFail ? `
@@ -1063,7 +1063,7 @@ function renderSidebarAgents(agents) {
   if (!container) return;
 
   if (agents.length === 0) {
-    container.innerHTML = `< div class="sidebar-empty-hint" > No agents saved in .db file yet.</div > `;
+    container.innerHTML = `<div class="sidebar-empty-hint" > No agents saved in .db file yet.</div> `;
     return;
   }
 
@@ -1071,10 +1071,10 @@ function renderSidebarAgents(agents) {
     const isHttp = a.adapter_type === 'http';
     const icon = isHttp ? '🌐' : '⚡';
     return `
-  < button type = "button" class="nav-item project-link" data - agent - id="${a.agent_id}" onclick = "launchTestForAgent('${a.agent_id}')" title = "Test ${escapeHtml(a.name)}" >
+  <button type="button" class="nav-item project-link" data-agent-id="${a.agent_id}" onclick="launchTestForAgent('${a.agent_id}')" title="Test ${escapeHtml(a.name)}" >
         <span class="project-symbol">${icon}</span>
         <span>${escapeHtml(a.name)}</span>
-      </button >
+      </button>
   `;
   }).join('');
 }
@@ -1085,10 +1085,10 @@ function renderAgentsGrid(agents) {
 
   if (agents.length === 0) {
     container.innerHTML = `
-  < div class="card" style = "grid-column: 1 / -1; color: var(--text-muted); padding: 36px; text-align: center;" >
+  <div class="card" style="grid-column: 1 / -1; color: var(--text-muted); padding: 36px; text-align: center;" >
         <p style="font-size: 1rem; margin-bottom: 8px;">No agents saved in database (.db) yet.</p>
         <p style="font-size: 0.85rem; color: var(--text-secondary);">Click '+ Register New Agent' or test any URL in the Playground to save one.</p>
-      </div >
+      </div>
   `;
     return;
   }
@@ -1096,7 +1096,7 @@ function renderAgentsGrid(agents) {
   container.innerHTML = agents.map(a => {
     const isHttp = a.adapter_type === 'http';
     return `
-  < div class="agent-card" >
+  <div class="agent-card" >
         <div class="agent-card-title">${escapeHtml(a.name)}</div>
         <p class="agent-scope-text">${escapeHtml(a.description || a.scope_description || 'Authorized evaluation target')}</p>
         <div class="agent-meta-tags">
@@ -1113,7 +1113,7 @@ function renderAgentsGrid(agents) {
             🗑 Delete
           </button>
         </div>
-      </div >
+      </div>
   `;
   }).join('');
 }
@@ -1170,12 +1170,12 @@ function renderAssessmentsTable(assessments) {
   if (!tbody) return;
 
   if (assessments.length === 0) {
-    tbody.innerHTML = `< tr > <td colspan="6" class="text-center" style="padding: 24px; color: var(--text-muted);">No assessment templates configured yet.</td></tr > `;
+    tbody.innerHTML = `<tr > <td colspan="6" class="text-center" style="padding: 24px; color: var(--text-muted);">No assessment templates configured yet.</td></tr> `;
     return;
   }
 
   tbody.innerHTML = assessments.map(a => `
-  < tr >
+  <tr >
       <td><strong>${escapeHtml(a.title)}</strong></td>
       <td><code>${a.agent_id ? a.agent_id.substring(0, 10) + '...' : 'Target Agent'}</code></td>
       <td><span class="meta-chip font-mono">${escapeHtml((a.scope_hash || 'SHA-256').substring(0, 12))}...</span></td>
@@ -1186,7 +1186,7 @@ function renderAssessmentsTable(assessments) {
           Start Run
         </button>
       </td>
-    </tr >
+    </tr>
   `).join('');
 }
 
@@ -1216,19 +1216,19 @@ function renderAuditTable(events) {
   if (!tbody) return;
 
   if (!events || events.length === 0) {
-    tbody.innerHTML = `< tr > <td colspan="6" class="text-center" style="padding: 24px; color: var(--text-muted);">No activity recorded yet.</td></tr > `;
+    tbody.innerHTML = `<tr > <td colspan="6" class="text-center" style="padding: 24px; color: var(--text-muted);">No activity recorded yet.</td></tr> `;
     return;
   }
 
   tbody.innerHTML = events.slice().reverse().map(e => `
-  < tr >
+  <tr >
       <td style="color: var(--text-muted); font-size: 0.76rem;">${new Date(e.timestamp).toLocaleTimeString()}</td>
       <td><strong>${escapeHtml(e.actor_email || e.actor_id)}</strong></td>
       <td><span class="meta-chip">${escapeHtml(e.action)}</span></td>
       <td>${escapeHtml(e.resource_type)}</td>
       <td><code>${(e.resource_id || '').substring(0, 10)}...</code></td>
       <td style="color: var(--text-muted); font-size: 0.74rem;">${(e.correlation_id || '').substring(0, 8)}</td>
-    </tr >
+    </tr>
   `).join('');
 }
 
@@ -1270,13 +1270,13 @@ function renderUsageBoxes(usage) {
   const intervalLabel = usage.billing_interval ? ` / ${ usage.billing_interval } ` : '';
 
   container.innerHTML = `
-  < div class="usage-box" >
+  <div class="usage-box" >
       <div class="usage-box-title">Active Plan</div>
       <div class="usage-box-num" style="font-size: 1.25rem;">${escapeHtml(usage.plan_name || usage.plan_id || 'Starter')}</div>
       <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
         <span class="status-chip chip-pass" style="font-size: 0.72rem;">ACTIVE</span> ${planPriceFormatted}${intervalLabel}
       </div>
-    </div >
+    </div>
     <div class="usage-box">
       <div class="usage-box-title">Agents Registered</div>
       <div class="usage-box-num">${usage.agents_count || 0} / ${usage.agents_limit || 25}</div>
@@ -1306,11 +1306,11 @@ function renderPlansTable(plans, activePlanId) {
     const actionCell = isCurrent
       ? '<span class="status-chip chip-pass">CURRENT PLAN</span>'
       : (canManage
-          ? `< button type = "button" class="btn-table-action" onclick = "window.switchPlan('${p.plan_id}', '${escapeHtml(p.name)}')" > Activate Plan</button > `
+          ? `<button type="button" class="btn-table-action" onclick="window.switchPlan('${p.plan_id}', '${escapeHtml(p.name)}')" > Activate Plan</button> `
           : '<span class="status-chip chip-neutral">Available</span>');
 
     return `
-  < tr class="${isCurrent ? 'row-current-plan' : ''}" >
+  <tr class="${isCurrent ? 'row-current-plan' : ''}" >
         <td><strong>${escapeHtml(p.name)}</strong>${isCurrent ? ' <span class="meta-chip chip-info" style="margin-left: 6px;">Active</span>' : ''}</td>
         <td>£${((p.base_amount_minor || 0) / 100).toFixed(2)}</td>
         <td><span class="meta-chip">${p.billing_interval}</span></td>
@@ -1320,7 +1320,7 @@ function renderPlansTable(plans, activePlanId) {
         <td>${p.retention_days} days</td>
         <td><span class="status-chip ${p.active ? 'chip-pass' : 'chip-fail'}">${p.active ? 'ACTIVE' : 'INACTIVE'}</span></td>
         <td class="text-right">${actionCell}</td>
-      </tr >
+      </tr>
   `;
   }).join('');
 }
@@ -1476,7 +1476,7 @@ function populateScenariosCheckboxes() {
   if (!container) return;
 
   container.innerHTML = allScenarios.map(s => `
-  < label class="scenario-checkbox-item" >
+  <label class="scenario-checkbox-item" >
     <input type="checkbox" name="dispatch_scenarios" value="${s.scenario_id}" checked>
       <span>${escapeHtml(s.scenario_id)}</span>
     </label>
@@ -1488,7 +1488,7 @@ function populateAgentDropdowns() {
   if (!select) return;
 
   select.innerHTML = registeredAgents.map(a => `
-  < option value = "${a.agent_id}" > ${ escapeHtml(a.name) } (${ a.adapter_type })</option >
+  <option value="${a.agent_id}" > ${ escapeHtml(a.name) } (${ a.adapter_type })</option>
     `).join('');
 }
 
@@ -1497,7 +1497,7 @@ function populateAssessmentDropdowns() {
   if (!select) return;
 
   select.innerHTML = registeredAssessments.map(a => `
-    < option value = "${a.assessment_id}" > ${ escapeHtml(a.title) }</option >
+    <option value="${a.assessment_id}" > ${ escapeHtml(a.title) }</option>
       `).join('');
 }
 
@@ -1507,7 +1507,7 @@ function populateCompareDropdowns() {
   if (!curSelect || !baseSelect) return;
 
   const options = pastRuns.map(r => `
-      < option value = "${r.run_id}" > Run ${ r.run_id.substring(0, 8) } (${ r.summary?.FAIL || 0 } Issues, ${ r.summary?.PASS || 0 } Passed)</option >
+      <option value="${r.run_id}" > Run ${ r.run_id.substring(0, 8) } (${ r.summary?.FAIL || 0 } Issues, ${ r.summary?.PASS || 0 } Passed)</option>
         `).join('');
 
   curSelect.innerHTML = options;
