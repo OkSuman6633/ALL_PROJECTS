@@ -155,8 +155,12 @@ def start_all_services() -> None:
     _spawn(
         "construction-api",
         CONSTRUCTION_API_PORT,
-        [_python_for(p3), "-m", "uvicorn", "app.main:create_app", "--factory", "--port", str(CONSTRUCTION_API_PORT)],
+        [_python_for(p3), "-m", "uvicorn", "app.main:create_app", "--factory", "--reload", "--port", str(CONSTRUCTION_API_PORT)],
         p3 / "backend",
+        {
+            "APP_ENV": os.getenv("APP_ENV", "local"),
+            "AUTH_DEV_HS256_SECRET": os.getenv("AUTH_DEV_HS256_SECRET", "cvea-local-dev-secret-key-min-32-chars"),
+        },
     )
     _spawn(
         "construction-web",
