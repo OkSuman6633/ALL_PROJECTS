@@ -104,11 +104,18 @@ def _spawn(name: str, port: int, cmd: list[str], cwd: Path, extra_env: dict[str,
 def stop_all_services() -> None:
     for name, proc in _CHILDREN:
         if proc.poll() is None:
-            proc.terminate()
-            try:
-                proc.wait(timeout=3)
-            except subprocess.TimeoutExpired:
-                proc.kill()
+            if os.name == "nt":
+                subprocess.run(
+                    ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+            else:
+                proc.terminate()
+                try:
+                    proc.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
             print(f"  [-] Stopped {name}")
     _CHILDREN.clear()
 
@@ -154,7 +161,7 @@ def start_all_services() -> None:
     _spawn(
         "construction-web",
         CONSTRUCTION_PORT,
-        [npm, "run", "dev", "--", "--port", str(CONSTRUCTION_PORT)],
+        [npm, "run", "dev", "--", "--port", str(CONSTRUCTION_PORT), "--strictPort"],
         p3 / "frontend",
         {
             "VITE_BASE_PATH": "/Construction-variation-tracker/",
@@ -173,7 +180,7 @@ def start_all_services() -> None:
     _spawn(
         "leakage-web",
         LEAKAGE_PORT,
-        [npm, "run", "dev", "--", "--port", str(LEAKAGE_PORT)],
+        [npm, "run", "dev", "--", "--port", str(LEAKAGE_PORT), "--strictPort"],
         p4 / "frontend",
         {
             "VITE_BASE_PATH": "/Contract-Invoice-Leakage-Finder/",
@@ -192,7 +199,7 @@ def start_all_services() -> None:
     _spawn(
         "lead-to-order-web",
         LEAD_TO_ORDER_PORT,
-        [npm, "run", "dev", "--", "--port", str(LEAD_TO_ORDER_PORT)],
+        [npm, "run", "dev", "--", "--port", str(LEAD_TO_ORDER_PORT), "--strictPort"],
         p5 / "frontend",
         {
             "VITE_BASE_PATH": "/Industry-Specific-Lead-to-Order-Agent/",
