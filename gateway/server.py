@@ -148,7 +148,7 @@ def start_all_services() -> None:
     _spawn(
         "construction-api",
         CONSTRUCTION_API_PORT,
-        [_python_for(p3), "-m", "uvicorn", "app.main:app", "--port", str(CONSTRUCTION_API_PORT)],
+        [_python_for(p3), "-m", "uvicorn", "app.main:create_app", "--factory", "--port", str(CONSTRUCTION_API_PORT)],
         p3 / "backend",
     )
     _spawn(
@@ -331,11 +331,17 @@ class GatewayHandler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     autostart = "--no-autostart" not in sys.argv and os.getenv("GATEWAY_AUTOSTART", "1") != "0"
+    try:
+        server = ThreadingHTTPServer(("0.0.0.0", PORT), GatewayHandler)
+    except OSError as exc:
+        print(f"ERROR: Could not bind gateway on port {PORT}: {exc}")
+        print("Stop the old process using port 8080 first, then run python gateway/server.py again.")
+        sys.exit(1)
+
     if autostart:
         atexit.register(stop_all_services)
         start_all_services()
 
-    server = ThreadingHTTPServer(("0.0.0.0", PORT), GatewayHandler)
     print(f"\nAll_Projects gateway listening on http://localhost:{PORT}")
     print("Routes:")
     for name, (h, p, _) in ROUTES.items():
