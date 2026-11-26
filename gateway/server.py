@@ -161,7 +161,7 @@ def start_all_services() -> None:
     _spawn(
         "construction-web",
         CONSTRUCTION_PORT,
-        [npm, "run", "dev", "--", "--port", str(CONSTRUCTION_PORT), "--strictPort"],
+        [npm, "run", "dev", "--", "--host", "0.0.0.0", "--port", str(CONSTRUCTION_PORT), "--strictPort"],
         p3 / "frontend",
         {
             "VITE_BASE_PATH": "/Construction-variation-tracker/",
@@ -180,7 +180,7 @@ def start_all_services() -> None:
     _spawn(
         "leakage-web",
         LEAKAGE_PORT,
-        [npm, "run", "dev", "--", "--port", str(LEAKAGE_PORT), "--strictPort"],
+        [npm, "run", "dev", "--", "--host", "0.0.0.0", "--port", str(LEAKAGE_PORT), "--strictPort"],
         p4 / "frontend",
         {
             "VITE_BASE_PATH": "/Contract-Invoice-Leakage-Finder/",
@@ -263,13 +263,17 @@ class GatewayHandler(BaseHTTPRequestHandler):
                 self.wfile.write(body)
             return
 
-        # Redirect /ProjectName -> /ProjectName/ for clean relative resolution
+        # Redirect /ProjectName -> /ProjectName/ for Vite/static apps (Next.js expects no trailing slash)
+        nextjs_prefixes = {"AI-operations-Diagonostic", "Procurement-Quote-Comparison-Agent"}
         for prefix in ROUTES:
-            if self.path == f"/{prefix}":
+            if self.path == f"/{prefix}" and prefix not in nextjs_prefixes:
                 self.send_response(302)
                 self.send_header("Location", f"/{prefix}/")
                 self.end_headers()
                 return
+            if self.path == f"/{prefix}/" and prefix in nextjs_prefixes:
+                self.path = f"/{prefix}"
+                break
 
         target = resolve_target(self.path, self.headers.get("Referer"))
         if not target:
