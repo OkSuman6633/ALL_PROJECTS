@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>All Projects — Unified Gateway</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card: #131a2a;
+      --border: #232d45;
+      --text: #e6edf7;
+      --muted: #93a4c3;
+      --accent: #60a5fa;
+      --accent-hover: #93c5fd;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 48px 24px;
+    }
+    .container { max-width: 1040px; margin: 0 auto; }
+    h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
+    .subtitle { color: var(--muted); margin-bottom: 32px; font-size: 1rem; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .card h2 { font-size: 1.1rem; margin-bottom: 8px; color: var(--text); word-break: break-word; }
+    .card p { color: var(--muted); font-size: 0.9rem; line-height: 1.45; margin-bottom: 18px; }
+    .meta { font-family: ui-monospace, monospace; font-size: 0.8rem; color: var(--muted); margin-bottom: 12px; }
+    .btn {
+      display: inline-block;
+      text-decoration: none;
+      background: var(--accent);
+      color: #081120;
+      font-weight: 600;
+      padding: 9px 14px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+    .btn:hover { background: var(--accent-hover); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>All Projects Hub</h1>
+    <p class="subtitle">Open any project directly by appending <code>/project-name</code> to this URL.</p>
+    <div class="grid">
+      <div class="card">
+        <div>
+          <h2>Agent_Assurence</h2>
+          <p>Agent Assurance Laboratory Studio (FastAPI + Web UI).</p>
+          <div class="meta">Route: /Agent_Assurence &rarr; :8001</div>
+        </div>
+        <a class="btn" href="/Agent_Assurence/">Open /Agent_Assurence</a>
+      </div>
+      <div class="card">
+        <div>
+          <h2>AI-operations-Diagonostic</h2>
+          <p>AI Operations Diagnostic platform (FastAPI + Next.js).</p>
+          <div class="meta">Route: /AI-operations-Diagonostic &rarr; :3001</div>
+        </div>
+        <a class="btn" href="/AI-operations-Diagonostic/">Open /AI-operations-Diagonostic</a>
+      </div>
+      <div class="card">
+        <div>
+          <h2>Construction-variation-tracker</h2>
+          <p>Construction Variation &amp; Engineering Tracker (FastAPI + Vite React).</p>
+          <div class="meta">Route: /Construction-variation-tracker &rarr; :5173</div>
+        </div>
+        <a class="btn" href="/Construction-variation-tracker/">Open /Construction-variation-tracker</a>
+      </div>
+      <div class="card">
+        <div>
+          <h2>Contract-Invoice-Leakage-Finder</h2>
+          <p>Contract &amp; Invoice Leakage Finder (FastAPI + Vite React).</p>
+          <div class="meta">Route: /Contract-Invoice-Leakage-Finder &rarr; :5174</div>
+        </div>
+        <a class="btn" href="/Contract-Invoice-Leakage-Finder/">Open /Contract-Invoice-Leakage-Finder</a>
+      </div>
+      <div class="card">
+        <div>
+          <h2>Industry-Specific-Lead-to-Order-Agent</h2>
+          <p>Industry-Specific Lead-to-Order Agent (FastAPI + Vite React).</p>
+          <div class="meta">Route: /Industry-Specific-Lead-to-Order-Agent &rarr; :5175</div>
+        </div>
+        <a class="btn" href="/Industry-Specific-Lead-to-Order-Agent/">Open /Industry-Specific-Lead-to-Order-Agent</a>
+      </div>
+      <div class="card">
+        <div>
+          <h2>Procurement-Quote-Comparison-Agent</h2>
+          <p>ProcureAI Quote Comparison Agent (FastAPI + Next.js).</p>
+          <div class="meta">Route: /Procurement-Quote-Comparison-Agent &rarr; :3002</div>
+        </div>
+        <a class="btn" href="/Procurement-Quote-Comparison-Agent/">Open /Procurement-Quote-Comparison-Agent</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

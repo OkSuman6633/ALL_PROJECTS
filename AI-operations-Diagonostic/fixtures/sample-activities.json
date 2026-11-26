@@ -1,0 +1,11 @@
+{
+  "process_name": "Supplier invoice review (synthetic example)",
+  "sector": "Professional services",
+  "period": "Synthetic monthly estimate",
+  "unit": "invoices",
+  "goals": "Illustrate effort baseline and distinguish capacity from cash savings.",
+  "activity_inputs": [
+    {"label":"Check invoice details", "monthly_volume":400, "minutes_per_unit":5, "hourly_rate":28, "currency":"GBP", "achievable_reduction_pct":20, "source_ids":["synthetic-fixture-01"], "confirmed":true},
+    {"label":"Resolve exceptions", "monthly_volume":80, "minutes_per_unit":12, "hourly_rate":28, "currency":"GBP", "achievable_reduction_pct":10, "source_ids":["synthetic-fixture-01"], "confirmed":false}
+  ]
+}

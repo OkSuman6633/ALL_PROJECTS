@@ -1,0 +1,13 @@
+{
+  "catalogue_version_id": "example-v1",
+  "status": "hypothesis-not-for-sale",
+  "currency": "GBP",
+  "tax_note": "Illustrative ex-VAT prices only; obtain UK tax/legal advice before sale.",
+  "plans": [
+    {"plan_id":"discovery-snapshot", "name":"Discovery Snapshot", "active":false, "setup_price_minor":49500, "recurring_price_minor":0, "billing_interval":"one_time", "document_limit":2, "assessment_limit":1, "retained_days":30, "human_review_hours":1, "feature_flags":["questionnaire","preliminary-review"], "region":"UK", "tax_code":"review-required"},
+    {"plan_id":"verified-diagnostic", "name":"Verified Diagnostic", "active":false, "setup_price_minor":250000, "recurring_price_minor":0, "billing_interval":"one_time", "document_limit":5, "assessment_limit":1, "retained_days":90, "human_review_hours":8, "feature_flags":["evidence-register","scenarios","pdf-report"], "region":"UK", "tax_code":"review-required"},
+    {"plan_id":"extended-diagnostic", "name":"Extended Diagnostic", "active":false, "setup_price_minor":450000, "recurring_price_minor":0, "billing_interval":"one_time", "document_limit":20, "assessment_limit":3, "retained_days":90, "human_review_hours":12, "feature_flags":["multi-subprocess","scenario-analysis","roadmap"], "region":"UK", "tax_code":"review-required"},
+    {"plan_id":"monitoring-hypothesis", "name":"Monitoring subscription (hypothesis)", "active":false, "setup_price_minor":0, "recurring_price_minor":29900, "billing_interval":"monthly", "document_limit":5, "assessment_limit":1, "retained_days":30, "human_review_hours":0, "feature_flags":["future-monitoring"], "region":"UK", "tax_code":"review-required"}
+  ],
+  "warning": "These are copied from the supplied business-model hypothesis and have not been validated. No billing or entitlements are implemented. Do not advertise or charge based on this file. Production catalogue needs immutable versions, effective dates, admin approvals and GCS-backed storage."
+}

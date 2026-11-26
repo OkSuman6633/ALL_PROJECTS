@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Assurance Laboratory — AI Safety & Reliability Studio</title>
+  <meta name="description"
+    content="Easy, user-friendly AI agent security testing, policy assurance, and boundary evaluation dashboard.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+</head>
+
+<body class="dark-theme auth-locked">
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       AUTHENTICATION GATE (email + password, RBAC-aware session)
+       Rendered until /v1/auth/me confirms a live session.
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="auth-gate" id="auth-gate" role="dialog" aria-modal="true" aria-labelledby="auth-gate-title">
+    <div class="auth-gate-card">
+      <aside class="auth-gate-aside">
+        <div class="auth-gate-brand">
+          <div class="brand-cube-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L2 7.5L12 13L22 7.5L12 2Z" fill="white" fill-opacity="0.95" />
+              <path d="M2 12L12 17.5L22 12" stroke="white" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+              <path d="M2 16.5L12 22L22 16.5" stroke="white" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+          </div>
+          <div class="brand-info">
+            <div class="brand-name">Assurance Lab</div>
+            <div class="brand-tier-row"><span class="brand-tier">Agent Assurance</span></div>
+          </div>
+        </div>
+
+        <h1 class="auth-gate-title" id="auth-gate-title">Prove your agents behave before your customers find out.</h1>
+        <p class="auth-gate-copy">Red-team every agent, capture immutable evidence, and gate releases on signed
+          assurance runs.</p>
+
+        <ul class="auth-gate-points">
+          <li>Role-based access for owners, assessors, reviewers and viewers</li>
+          <li>Session-bound audit trail stored in your local SQLite database</li>
+          <li>Brute-force lockout plus HttpOnly session cookies</li>
+        </ul>
+
+        <div class="auth-gate-badges">
+          <span class="auth-badge">PBKDF2 hashing</span>
+          <span class="auth-badge">HttpOnly session</span>
+          <span class="auth-badge">Audit logged</span>
+        </div>
+      </aside>
+
+      <section class="auth-gate-panel">
+        <div class="auth-tabs" role="tablist" aria-label="Authentication mode">
+          <button type="button" class="auth-tab active" data-auth-tab="signin" id="auth-tab-signin" role="tab"
+            aria-selected="true">Sign in</button>
+          <button type="button" class="auth-tab" data-auth-tab="signup" id="auth-tab-signup" role="tab"
+            aria-selected="false">Create workspace</button>
+        </div>
+
+        <div class="auth-notice hidden" id="auth-gate-notice" role="status" aria-live="polite"></div>
+
+        <!-- ─── Sign in ─── -->
+        <div id="auth-panel-signin">
+          <form id="auth-signin-form" class="auth-form" novalidate>
+            <div class="auth-field">
+              <label for="auth-signin-email">Work email</label>
+              <input type="email" id="auth-signin-email" name="email" autocomplete="username" spellcheck="false"
+                placeholder="you@company.com" required>
+            </div>
+
+            <div class="auth-field">
+              <label for="auth-signin-password">Password</label>
+              <div class="auth-password-wrap">
+                <input type="password" id="auth-signin-password" name="password" autocomplete="current-password"
+                  placeholder="Your password" required>
+                <button type="button" class="auth-password-toggle" data-toggle-password="auth-signin-password"
+                  aria-label="Show password">Show</button>
+              </div>
+            </div>
+
+            <label class="auth-checkbox-row" for="auth-signin-remember">
+              <input type="checkbox" id="auth-signin-remember">
+              <span>Keep me signed in for 30 days</span>
+            </label>
+
+            <div class="auth-error hidden" id="auth-signin-error" role="alert"></div>
+
+            <button type="submit" class="btn-primary auth-submit" id="auth-signin-submit">Sign in</button>
+          </form>
+
+          <div class="auth-demo-hint hidden" id="auth-demo-hint">
+            <span>Seeded demo workspace: <code id="auth-demo-email"></code></span>
+            <button type="button" class="auth-link-btn" id="auth-demo-fill">Use demo account</button>
+          </div>
+        </div>
+
+        <!-- ─── Create workspace ─── -->
+        <div id="auth-panel-signup" class="hidden">
+          <form id="auth-signup-form" class="auth-form" novalidate>
+            <div class="auth-grid-2">
+              <div class="auth-field">
+                <label for="auth-signup-name">Your name</label>
+                <input type="text" id="auth-signup-name" name="name" autocomplete="name" placeholder="Ada Lovelace">
+              </div>
+              <div class="auth-field">
+                <label for="auth-signup-workspace">Workspace</label>
+                <input type="text" id="auth-signup-workspace" name="organization" autocomplete="organization"
+                  placeholder="Acme AI">
+              </div>
+            </div>
+
+            <div class="auth-field">
+              <label for="auth-signup-email">Work email</label>
+              <input type="email" id="auth-signup-email" name="email" autocomplete="username" spellcheck="false"
+                placeholder="you@company.com" required>
+            </div>
+
+            <div class="auth-field">
+              <label for="auth-signup-password">Password</label>
+              <div class="auth-password-wrap">
+                <input type="password" id="auth-signup-password" name="new-password" autocomplete="new-password"
+                  placeholder="Create a password" required>
+                <button type="button" class="auth-password-toggle" data-toggle-password="auth-signup-password"
+                  aria-label="Show password">Show</button>
+              </div>
+              <p class="auth-hint" id="auth-signup-hint">Use at least 10 characters with both letters and digits.</p>
+            </div>
+
+            <div class="auth-field">
+              <label for="auth-signup-confirm">Confirm password</label>
+              <input type="password" id="auth-signup-confirm" name="confirm-password" autocomplete="new-password"
+                placeholder="Repeat the password" required>
+            </div>
+
+            <div class="auth-error hidden" id="auth-signup-error" role="alert"></div>
+
+            <button type="submit" class="btn-primary auth-submit" id="auth-signup-submit">Create workspace</button>
+          </form>
+        </div>
+
+        <p class="auth-footnote">
+          Sessions are stored in <code>agent_assurance.db</code> and carried by an HttpOnly cookie.
+        </p>
+      </section>
+    </div>
+  </div>
+
+  <div class="app-shell">
+
+    <!-- ─── Left Sidebar ────────────────────────────────────────────────── -->
+    <aside class="sidebar" id="app-sidebar">
+      <!-- Organization / Brand Header -->
+      <div class="sidebar-brand">
+        <div class="brand-cube-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L2 7.5L12 13L22 7.5L12 2Z" fill="white" fill-opacity="0.95" />
+            <path d="M2 12L12 17.5L22 12" stroke="white" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" />
+            <path d="M2 16.5L12 22L22 16.5" stroke="white" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" />
+          </svg>
+        </div>
+        <div class="brand-info">
+          <div class="brand-name">Assurance Lab</div>
+          <div class="brand-tier-row">
+            <span class="brand-tier">Agent Assurance</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <div class="sidebar-scrollable">
+        <!-- Section: Platform -->
+        <div class="nav-section">
+          <div class="section-title">PLATFORM</div>
+          <nav class="nav-list">
+            <button type="button" class="nav-item active" data-tab="overview" id="nav-overview">
+              <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              <span>Overview</span>
+            </button>
+
+            <button type="button" class="nav-item" data-tab="playground" id="nav-playground">
+              <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <polyline points="4 17 10 11 4 5"></polyline>
+                <line x1="12" y1="19" x2="20" y2="19"></line>
+              </svg>
+              <span>Playground Testing</span>
+            </button>
+
+            <button type="button" class="nav-item" data-tab="test-runs" id="nav-test-runs">
+              <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              <span>Test Runs</span>
+              <span class="nav-counter-badge" id="sidebar-runs-count">0</span>
+            </button>
+
+            <button type="button" class="nav-item" data-tab="flight-recorder" id="nav-flight-recorder">
+              <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              </svg>
+              <span>Alerts &amp; Findings</span>
+              <span class="nav-counter-badge badge-danger" id="sidebar-findings-count">0</span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Section: REGISTERED AGENTS (Fetched dynamically from SQLite .db) -->
+        <div class="nav-section">
+          <div class="section-header-row">
+            <span class="section-title">REGISTERED AGENTS</span>
+            <button type="button" class="btn-section-action" id="btn-quick-new-project" title="Register New Agent"
+              data-permission="agents:write">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+          </div>
+          <!-- View All Agents Tab Link -->
+          <button type="button" class="nav-item" data-tab="projects" id="nav-manage-agents" style="margin-bottom: 6px;">
+            <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+            <span>Manage All Agents</span>
+            <span class="nav-counter-badge" id="sidebar-agents-count">0</span>
+          </button>
+          <!-- Dynamic Agents List populated from .db file -->
+          <nav class="nav-list" id="sidebar-projects-list">
+            <div class="sidebar-empty-hint">Loading agents from database...</div>
+          </nav>
+        </div>
+
+        <!-- Section: Monitoring -->
+        <div class="nav-section">
+          <div class="section-title">MONITORING</div>
+          <nav class="nav-list">
+            <button type="button" class="nav-item" data-tab="logs" id="nav-logs">
+              <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                <polyline points="13 2 13 9 20 9"></polyline>
+              </svg>
+              <span>Activity Logs</span>
+            </button>
+
+            <button type="button" class="nav-item" data-tab="analytics" id="nav-analytics">
+              <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+              </svg>
+              <span>Performance Analytics</span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Section: Admin -->
+        <div class="nav-section">
+          <div class="section-title">SETTINGS</div>
+          <nav class="nav-list">
+            <button type="button" class="nav-item" data-tab="team" id="nav-team" data-permission="users:manage">
+              <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+              <span>Team & Access</span>
+            </button>
+            <button type="button" class="nav-item" data-tab="billing" id="nav-billing">
+              <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                <line x1="1" y1="10" x2="23" y2="10"></line>
+              </svg>
+              <span>Plans &amp; Limits</span>
+            </button>
+
+            <button type="button" class="nav-item" data-tab="settings" id="nav-settings">
+              <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path
+                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                </path>
+              </svg>
+              <span>Workspace Controls</span>
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Session / User Profile Card -->
+      <div class="sidebar-user-footer">
+        <div class="user-avatar-circle" id="session-avatar">—</div>
+        <div class="user-meta">
+          <div class="user-name-row">
+            <span class="user-name" id="session-name">Signed out</span>
+            <span class="session-role-chip hidden" id="session-role"></span>
+          </div>
+          <span class="user-email" id="session-email">No active session</span>
+        </div>
+        <button type="button" class="session-signout-btn hidden" id="btn-sign-out" title="Sign out"
+          aria-label="Sign out">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ─── Main Content Canvas ─────────────────────────────────────────── -->
+    <div class="main-wrapper">
+
+      <!-- Top Header Navigation -->
+      <header class="top-header">
+        <div class="header-left">
+          <div class="sidebar-toggle-btn" id="sidebar-toggle">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+            </svg>
+          </div>
+          <div class="breadcrumb-trail">
+            <span class="breadcrumb-root">Home</span>
+            <span class="breadcrumb-sep">&gt;</span>
+            <span class="breadcrumb-current" id="header-breadcrumb-current">Overview</span>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Theme Toggle Button (Dark and Light Theme) -->
+          <button type="button" class="theme-toggle-btn" id="btn-theme-toggle" title="Switch Theme (Dark / Light)">
+            <span class="theme-toggle-icon" id="theme-toggle-icon">☀️</span>
+            <span class="theme-toggle-text" id="theme-toggle-label">Light Mode</span>
+          </button>
+
+          <!-- Quick Action: Test an Agent -->
+          <button type="button" class="btn-top-action" id="btn-header-quick-scan" data-permission="runs:execute">
+            <span class="action-icon">▶</span>
+            <span>Test Agent</span>
+          </button>
+
+          <!-- Server Online Status -->
+          <div class="api-status-pill" id="api-status-pill">
+            <span class="status-pulse-dot" id="api-status-dot"></span>
+            <span class="status-text" id="api-status-text">Connected</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Scrollable Main Content Container -->
+      <main class="page-content" id="main-content">
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             VIEW 1: OVERVIEW DASHBOARD
+             ═══════════════════════════════════════════════════════════════════ -->
+        <section class="tab-view active" id="view-overview">
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label">Total Test Requests</div>
+              <div class="kpi-value" id="kpi-total-requests">1.2M</div>
+              <div class="kpi-trend trend-positive" id="kpi-total-requests-trend">
+                <span class="trend-arrow">↗</span> 12.5% increase
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-label">Average Response Time</div>
+              <div class="kpi-value" id="kpi-avg-latency">450ms</div>
+              <div class="kpi-trend trend-positive" id="kpi-avg-latency-trend">
+                <span class="trend-arrow">↘</span> Fast and steady
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-label">Safety Pass Rate</div>
+              <div class="kpi-value" id="kpi-pass-rate">98.2%</div>
+              <div class="kpi-trend trend-positive" id="kpi-pass-rate-trend">
+                <span class="trend-arrow">↗</span> High compliance
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-label">Issues Prevented</div>
+              <div class="kpi-value" id="kpi-regressions-caught">14</div>
+              <div class="kpi-trend trend-positive" id="kpi-regressions-trend">
+                <span class="trend-arrow">↗</span> Caught before release
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Grid: Pass Rate Trend (Left) & Recent Alerts (Right) -->
+          <div class="overview-analytics-grid">
+            <div class="analytics-card chart-card">
+              <div class="card-header-flex">
+                <div>
+                  <h3 class="card-title">Daily Safety Pass Rate</h3>
+                  <p class="card-subtitle">Daily success rate across agent safety checks.</p>
+                </div>
+                <div class="card-header-actions">
+                  <div class="dropdown-pill-select" id="trend-period-select">
+                    <span id="trend-period-label">Last 7 days</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="chart-wrapper" id="trend-chart-wrapper">
+                <svg class="trend-svg" id="trend-svg" viewBox="0 0 680 320" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="curveGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.25" />
+                      <stop offset="100%" stop-color="#6366f1" stop-opacity="0.0" />
+                    </linearGradient>
+                  </defs>
+
+                  <g class="grid-lines">
+                    <line x1="50" y1="30" x2="650" y2="30" stroke="rgba(150,150,150,0.15)" stroke-width="1" />
+                    <text x="15" y="34" class="chart-axis-text">100%</text>
+
+                    <line x1="50" y1="95" x2="650" y2="95" stroke="rgba(150,150,150,0.25)" stroke-dasharray="4 4"
+                      stroke-width="1" />
+                    <text x="20" y="99" class="chart-axis-text">95%</text>
+                    <text x="580" y="99" class="chart-avg-text">-- Avg 95% --</text>
+
+                    <line x1="50" y1="160" x2="650" y2="160" stroke="rgba(150,150,150,0.15)" stroke-width="1" />
+                    <text x="20" y="164" class="chart-axis-text">90%</text>
+
+                    <line x1="50" y1="225" x2="650" y2="225" stroke="rgba(150,150,150,0.15)" stroke-width="1" />
+                    <text x="20" y="229" class="chart-axis-text">85%</text>
+
+                    <line x1="50" y1="280" x2="650" y2="280" stroke="rgba(150,150,150,0.15)" stroke-width="1" />
+                    <text x="20" y="284" class="chart-axis-text">80%</text>
+                  </g>
+
+                  <path id="chart-area-path" d="" fill="url(#curveGradient)" />
+                  <path id="chart-curve-path" d="" fill="none" stroke="#6366f1" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                  <line id="chart-hover-line" x1="0" y1="30" x2="0" y2="280" stroke="rgba(99,102,241,0.5)"
+                    stroke-width="1" stroke-dasharray="3 3" style="display:none;" />
+                  <g id="chart-points-group"></g>
+                  <circle id="chart-hover-dot" cx="0" cy="0" r="5" fill="#6366f1" stroke="#ffffff" stroke-width="2"
+                    style="display:none;" />
+                </svg>
+
+                <div class="chart-tooltip-bubble" id="chart-tooltip" style="display: none;">
+                  <div class="tooltip-day" id="tooltip-day">Fri</div>
+                  <div class="tooltip-rate" id="tooltip-rate">Pass Rate: 98%</div>
+                </div>
+
+                <div class="chart-x-axis" id="chart-x-labels">
+                  <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="analytics-card regressions-card">
+              <div class="card-header-flex">
+                <div>
+                  <h3 class="card-title">Recent Safety Alerts</h3>
+                  <p class="card-subtitle">Safety alerts caught during testing.</p>
+                </div>
+              </div>
+
+              <div class="regressions-list" id="recent-regressions-list"></div>
+
+              <div class="card-footer-action">
+                <button type="button" class="btn-link-action" id="btn-view-all-incidents">
+                  View All Alerts &amp; Findings
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             VIEW 2: TEST RUNS
+             ═══════════════════════════════════════════════════════════════════ -->
+        <section class="tab-view" id="view-test-runs">
+          <div class="view-header-row">
+            <div>
+              <h2 class="view-heading">Assessment Test Runs</h2>
+              <p class="view-subheading">Track past testing outcomes, safety scores, and compare runs over time.</p>
+            </div>
+            <div class="view-actions-group">
+              <button type="button" class="btn-secondary" id="btn-open-compare-modal">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path>
+                </svg>
+                Compare Two Runs
+              </button>
+              <button type="button" class="btn-primary" id="btn-open-dispatch-run-modal" data-permission="runs:execute">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                + Start Test Run
+              </button>
+            </div>
+          </div>
+
+          <div class="runs-filter-bar">
+            <div class="filter-search-box">
+              <input type="text" id="runs-search-input" placeholder="Search by Run ID or Agent Name...">
+            </div>
+            <div class="filter-pill-group">
+              <button type="button" class="filter-tab-pill active" data-run-status="all">All Runs</button>
+              <button type="button" class="filter-tab-pill" data-run-status="completed">Completed</button>
+              <button type="button" class="filter-tab-pill" data-run-status="running">In Progress</button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table" id="runs-table">
+              <thead>
+                <tr>
+                  <th>Run ID</th>
+                  <th>Target Agent</th>
+                  <th>Test Pack</th>
+                  <th>Rules Evaluated</th>
+                  <th>Results (Passed / Issues)</th>
+                  <th>Status</th>
+                  <th>Date &amp; Time</th>
+                  <th class="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="runs-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             VIEW 3: ALERTS & FINDINGS
+             ═══════════════════════════════════════════════════════════════════ -->
+        <section class="tab-view" id="view-flight-recorder">
+          <div class="view-header-row">
+            <div>
+              <h2 class="view-heading">Security Alerts &amp; Findings</h2>
+              <p class="view-subheading">Review safety boundary alerts, tool activity evidence, and resolution history.
+              </p>
+            </div>
+            <div class="view-actions-group">
+              <button type="button" class="btn-secondary" id="btn-refresh-findings">
+                ↻ Refresh Alerts
+              </button>
+            </div>
+          </div>
+
+          <div class="findings-filter-row">
+            <div class="filter-pill-group">
+              <button type="button" class="filter-tab-pill active" data-finding-filter="all">All (<span
+                  id="count-findings-all">0</span>)</button>
+              <button type="button" class="filter-tab-pill" data-finding-filter="open">Open (<span
+                  id="count-findings-open">0</span>)</button>
+              <button type="button" class="filter-tab-pill" data-finding-filter="confirmed">Confirmed</button>
+              <button type="button" class="filter-tab-pill" data-finding-filter="mitigated">Resolved</button>
+              <button type="button" class="filter-tab-pill" data-finding-filter="false_positive">Expected
+                Behavior</button>
+            </div>
+          </div>
+
+          <div class="findings-cards-grid" id="findings-grid"></div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             VIEW 4: PLAYGROUND (Live Agent Testing)
+             ═══════════════════════════════════════════════════════════════════ -->
+        <section class="tab-view" id="view-playground">
+          <div class="view-header-row">
+            <div>
+              <h2 class="view-heading">Agent Assurance Playground</h2>
+              <p class="view-subheading">Test any local URL (like http://127.0.0.1:8001) or deployed remote agent
+                against full safety policies.</p>
+            </div>
+          </div>
+
+          <!-- Scanner Hero Card -->
+          <div class="scanner-hero-card">
+            <form id="playground-scan-form" class="scanner-form">
+              <!-- Target Input Bar -->
+              <div class="input-action-bar">
+                <div class="url-input-container">
+                  <span class="input-icon">🔗</span>
+                  <input type="text" id="playground-agent-url-input"
+                    placeholder="Enter Agent URL (e.g. http://127.0.0.1:8002 or http://127.0.0.1:8001)"
+                    autocomplete="off">
+                  <button type="button" class="btn-clear-input" id="playground-btn-clear-url"
+                    title="Clear input">&times;</button>
+                </div>
+
+                <button type="submit" class="btn-primary btn-scan" id="playground-btn-scan">
+                  <span class="btn-scan-icon">▶</span>
+                  <span id="playground-btn-scan-text">Test Agent</span>
+                  <span class="btn-spinner hidden" id="playground-scan-spinner"></span>
+                </button>
+              </div>
+
+              <!-- Quick Target Presets -->
+              <div class="presets-row">
+                <span class="presets-label">Quick Presets:</span>
+                <button type="button" class="preset-chip active" id="pg-preset-travel">
+                  <span>✈️ Travel Agent (Port 8002)</span>
+                </button>
+                <button type="button" class="preset-chip" id="pg-preset-bookstore">
+                  <span>💻 Local Agent (Port 8001)</span>
+                </button>
+                <button type="button" class="preset-chip" id="pg-preset-local-agent">
+                  <span>🌐 Local Agent (Port 8000)</span>
+                </button>
+                <button type="button" class="preset-chip" id="pg-preset-synth-vuln">
+                  <span>⚡ Demo Agent (Vulnerable)</span>
+                </button>
+                <button type="button" class="preset-chip" id="pg-preset-synth-hard">
+                  <span>🛡️ Demo Agent (Safe / Hardened)</span>
+                </button>
+              </div>
+
+              <!-- Scan Options -->
+              <div class="scan-options-row">
+                <div class="option-group">
+                  <span class="option-label">Testing Scope:</span>
+                  <label class="radio-pill">
+                    <input type="radio" name="pg_scan_scope" value="all" checked>
+                    <span>Full Safety Suite (12 Safety Checks)</span>
+                  </label>
+                  <label class="radio-pill">
+                    <input type="radio" name="pg_scan_scope" value="core">
+                    <span>Essential Checks (4 Core Rules)</span>
+                  </label>
+                </div>
+
+                <div class="option-group token-budget-group">
+                  <label for="pg-token-budget-input" class="option-label">Token Budget:</label>
+                  <input type="number" id="pg-token-budget-input" value="5000" min="500" max="100000" step="500">
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Scanning Progress Indicator -->
+          <div id="pg-scanning-indicator" class="scanning-indicator hidden">
+            <div class="scanning-spinner"></div>
+            <div class="scanning-text-wrap">
+              <h3>Testing Target Agent Against Safety Policies...</h3>
+              <p>Evaluating prompt boundaries, tool permissions, sensitive data leakage, and action safety...</p>
+            </div>
+          </div>
+
+          <!-- Inline Error / Unreachable Port Banner -->
+          <div id="pg-error-banner" class="pg-error-banner hidden" role="alert">
+            <div class="pg-error-icon">🔌</div>
+            <div class="pg-error-body">
+              <div class="pg-error-title" id="pg-error-title">Agent Connection Failed</div>
+              <p class="pg-error-msg" id="pg-error-msg"></p>
+            </div>
+          </div>
+
+          <!-- Evaluation Results Section -->
+          <div id="pg-results-section" class="results-section hidden">
+            <!-- Verdict Hero Banner -->
+            <div id="pg-verdict-banner" class="verdict-banner banner-fail">
+              <div class="verdict-icon-col">
+                <span class="verdict-big-icon" id="pg-verdict-big-icon">⚠️</span>
+              </div>
+              <div class="verdict-text-col">
+                <div class="verdict-eyebrow" id="pg-verdict-eyebrow">TEST COMPLETED</div>
+                <h2 id="pg-verdict-headline">Safety Issues Detected</h2>
+                <p id="pg-verdict-subtext">The agent may have executed sensitive tools, bypassed confirmation gates, or
+                  leaked confidential test data.</p>
+              </div>
+              <div class="verdict-stats-col" id="pg-verdict-stats-pills"></div>
+            </div>
+
+            <!-- Action Bar: Download Reports & Save to DB -->
+            <div class="results-actions-bar">
+              <div class="target-meta-info">
+                <span>Target: <strong id="pg-res-target-display">Agent URL</strong></span>
+                <span class="sep">&bull;</span>
+                <span>Test ID: <code id="pg-res-run-id">run-1234</code></span>
+                <span id="pg-res-db-badge" class="meta-chip ml-8">Saved in Database</span>
+              </div>
+              <div class="report-buttons">
+                <button type="button" id="pg-btn-save-agent-manual" class="btn-secondary hidden">
+                  <span>💾 Save Agent to Database</span>
+                </button>
+                <button type="button" id="pg-btn-download-json" class="btn-primary">
+                  <span>📥 Download JSON Report</span>
+                </button>
+                <a href="#" id="pg-btn-download-text" class="btn-secondary" target="_blank">
+                  <span>📄 Download Printable Report</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Rule Cards Breakdown -->
+            <div class="rules-list-container">
+              <div class="rules-header">
+                <h3>Detailed Safety Check Outcomes</h3>
+                <div class="rules-filter-pills">
+                  <button type="button" class="filter-pill active" data-pg-filter="all">All Checks (<span
+                      id="pg-count-all">12</span>)</button>
+                  <button type="button" class="filter-pill" data-pg-filter="fail">Needs Attention (<span
+                      id="pg-count-violations">0</span>)</button>
+                  <button type="button" class="filter-pill" data-pg-filter="inconclusive">Inconclusive (<span
+                      id="pg-count-inconclusive">0</span>)</button>
+                  <button type="button" class="filter-pill" data-pg-filter="pass">Passed (<span
+                      id="pg-count-passed">0</span>)</button>
+                </div>
+              </div>
+
+              <div id="pg-rules-cards-container" class="rules-cards-grid"></div>
+            </div>
+          </div>
+
+          <!-- Direct Quick Query Tester -->
+          <div class="card mt-24">
+            <div class="card-header-flex">
+              <div>
+                <h3 class="card-title">Quick Query Tester</h3>
+                <p class="card-subtitle">Send a quick test message directly to an agent to preview its response in real
+                  time.</p>
+              </div>
+            </div>
+            <div class="input-action-bar">
+              <select id="mock-agent-scenario-select" class="form-select flex-1">
+                <option value="prompt_injection_boundary_v1">Instruction Boundary &amp; Injection Check</option>
+                <option value="allowed_tool_smoke_v1">Permitted Tool Execution Check</option>
+                <option value="approval_gate_v1">Action Approval Gate Check</option>
+                <option value="retry_idempotency_v1">Duplicate Action &amp; Retry Safety Check</option>
+                <option value="data_exfiltration_v1">Confidential Data Leakage Check</option>
+                <option value="unauthorized_tool_v1">Prohibited Tool Blocking Check</option>
+                <option value="tool_response_spoofing_v1">Safe Response Defense Check</option>
+                <option value="timeout_recovery_v1">Timeout Recovery Check</option>
+                <option value="pii_masking_v1">Privacy &amp; PII Redaction Check</option>
+              </select>
+              <label class="checkbox-label">
+                <input type="checkbox" id="mock-hardened-toggle"> Safe / Hardened Mode
+              </label>
+              <button type="button" class="btn-secondary" id="btn-invoke-mock-agent">
+                Send Test Message
+              </button>
+            </div>
+            <pre class="json-code-block mt-12"
+              id="mock-agent-output-block"><code>Select a scenario and click 'Send Test Message' to view response.</code></pre>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             VIEW 5: REGISTERED AGENTS (Fetched from .db file)
+             ═══════════════════════════════════════════════════════════════════ -->
+        <section class="tab-view" id="view-projects">
+          <div class="view-header-row">
+            <div>
+              <h2 class="view-heading">Registered Agents</h2>
+              <p class="view-subheading">All agents saved in your database (<code>agent_assurance.db</code>). Launch
+                live tests or register new agents.</p>
+            </div>
+            <div class="view-actions-group">
+              <button type="button" class="btn-secondary" id="btn-open-create-assessment-modal" data-permission="assessments:write">
+                + New Assessment Scope
+              </button>
+              <button type="button" class="btn-primary" id="btn-open-register-agent-modal" data-permission="agents:write">
+                + Register New Agent
+              </button>
+            </div>
+          </div>
+
+          <!-- Registered Agents Cards -->
+          <div class="section-title-sub">SAVED AGENTS IN DATABASE</div>
+          <div class="agents-grid" id="agents-cards-container">
+            <!-- Dynamically populated from SQLite .db -->
+          </div>
+
+          <!-- Assessment Scopes List -->
+          <div class="section-title-sub mt-24">SAVED ASSESSMENTS</div>
+          <div class="table-container">
+            <table class="data-table" id="assessments-table">
+              <thead>
+                <tr>
+                  <th>Assessment Title</th>
+                  <th>Target Agent</th>
+                  <th>Security ID</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th class="text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="assessments-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             VIEW 6: MONITORING (LOGS & ANALYTICS)
+             ═══════════════════════════════════════════════════════════════════ -->
+        <section class="tab-view" id="view-logs">
+          <div class="view-header-row">
+            <div>
+              <h2 class="view-heading">Activity Logs &amp; Audit Trail</h2>
+              <p class="view-subheading">Complete history capturing all agent registrations, test runs, and user
+                reviews.</p>
+            </div>
+            <button type="button" class="btn-secondary" id="btn-refresh-audit-logs">
+              ↻ Refresh Logs
+            </button>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table" id="audit-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>User</th>
+                  <th>Activity</th>
+                  <th>Item Type</th>
+                  <th>Item ID</th>
+                  <th>Reference</th>
+                </tr>
+              </thead>
+              <tbody id="audit-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             VIEW 7: TEAM & ACCESS (RBAC administration)
+             ═══════════════════════════════════════════════════════════════════ -->
+        <section class="tab-view" id="view-team">
+          <div class="view-header-row">
+            <div>
+              <h2 class="view-heading">Team & Access</h2>
+              <p class="view-subheading">Everyone in this workspace, the role assigned to them, and whether their
+                account is active.</p>
+            </div>
+            <div class="view-actions-group">
+              <button type="button" class="btn-secondary" id="btn-refresh-team">↻ Refresh</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header-flex">
+              <div>
+                <h3 class="card-title">Invite a teammate</h3>
+                <p class="card-subtitle">Accounts you create must set a new password after their first sign-in.</p>
+              </div>
+            </div>
+            <form id="team-invite-form" class="team-invite-form" novalidate>
+              <div class="team-invite-grid">
+                <div class="auth-field">
+                  <label for="team-invite-name">Full name</label>
+                  <input type="text" id="team-invite-name" class="form-input" autocomplete="off"
+                    placeholder="Ada Lovelace">
+                </div>
+                <div class="auth-field">
+                  <label for="team-invite-email">Email</label>
+                  <input type="email" id="team-invite-email" class="form-input" autocomplete="off"
+                    placeholder="ada@company.com" required>
+                </div>
+                <div class="auth-field">
+                  <label for="team-invite-role">Role</label>
+                  <select id="team-invite-role" class="form-select"></select>
+                </div>
+                <div class="auth-field">
+                  <label for="team-invite-password">Temporary password</label>
+                  <input type="password" id="team-invite-password" class="form-input" autocomplete="new-password"
+                    placeholder="Minimum 10 characters" required>
+                </div>
+                <div class="auth-field">
+                  <label aria-hidden="true">&nbsp;</label>
+                  <button type="submit" class="btn-primary" id="team-invite-submit">Create member</button>
+                </div>
+              </div>
+              <div class="auth-error hidden" id="team-invite-error" role="alert"></div>
+            </form>
+          </div>
+
+          <div class="section-title-sub mt-24">WORKSPACE MEMBERS</div>
+          <div class="table-container">
+            <table class="data-table" id="team-table">
+              <thead>
+                <tr>
+                  <th>Member</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Last sign-in</th>
+                  <th class="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="team-table-body">
+                <tr>
+                  <td colspan="5" class="team-empty">Loading workspace members…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="view-subheading mt-12" id="team-tenant-note"></p>
+
+          <div class="section-title-sub mt-24">ROLE-BASED ACCESS CONTROL (RBAC) PERMISSIONS MATRIX</div>
+          <div class="card mt-12">
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Role</th>
+                    <th>Register Agents</th>
+                    <th>Assessments &amp; Runs</th>
+                    <th>Review Findings</th>
+                    <th>Generate Reports</th>
+                    <th>Configure Plans &amp; Kill Switch</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Workspace Owner</strong></td>
+                    <td><span class="status-chip chip-pass">Yes</span></td>
+                    <td><span class="status-chip chip-pass">Yes</span></td>
+                    <td><span class="status-chip chip-pass">Yes</span></td>
+                    <td><span class="status-chip chip-pass">Yes</span></td>
+                    <td><span class="status-chip chip-pass">Yes</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Platform Admin</strong></td>
+                    <td><span class="status-chip chip-pass">Yes</span></td>
+                    <td><span class="status-chip chip-pass">Yes</span></td>
+                    <td><span class="status-chip chip-pass">Yes</span></td>
+                    <td><span class="status-chip chip-pass">Yes</span></td>
+                    <td><span class="status-chip chip-pass">Yes</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Assessor</strong></td>
+                    <td><span class="status-chip chip-pass">Yes</span></td>
+                    <td><span class="status-chip chip-pass">Yes</span></td>
+                    <td><span class="status-chip chip-neutral">View only</span></td>
+                    <td><span class="status-chip chip-neutral">View only</span></td>
+                    <td><span class="status-chip chip-fail">No</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Reviewer</strong></td>
+                    <td><span class="status-chip chip-neutral">View only</span></td>
+                    <td><span class="status-chip chip-neutral">View only</span></td>
+                    <td><span class="status-chip chip-pass">Yes</span></td>
+                    <td><span class="status-chip chip-pass">Yes</span></td>
+                    <td><span class="status-chip chip-fail">No</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Viewer</strong></td>
+                    <td><span class="status-chip chip-neutral">View only</span></td>
+                    <td><span class="status-chip chip-neutral">View only</span></td>
+                    <td><span class="status-chip chip-neutral">View only</span></td>
+                    <td><span class="status-chip chip-neutral">View only</span></td>
+                    <td><span class="status-chip chip-fail">No</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="tab-view" id="view-analytics">
+          <div class="view-header-row">
+            <div>
+              <h2 class="view-heading">Performance &amp; Response Analytics</h2>
+              <p class="view-subheading">Breakdown across response speeds, tokens, and safety reliability.</p>
+            </div>
+          </div>
+
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label">Median Latency</div>
+              <div class="kpi-value">180ms</div>
+              <div class="kpi-trend trend-positive">Steady in CI</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">P95 Latency</div>
+              <div class="kpi-value">450ms</div>
+              <div class="kpi-trend trend-positive">Under 500ms SLA</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Tokens / Test</div>
+              <div class="kpi-value">4,120</div>
+              <div class="kpi-trend trend-positive">Well within budget</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Retry Reliability</div>
+              <div class="kpi-value">99.8%</div>
+              <div class="kpi-trend trend-positive">Zero duplicate actions</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             VIEW 7: ADMIN (BILLING, PLANS & EMERGENCY CONTROLS)
+             ═══════════════════════════════════════════════════════════════════ -->
+        <section class="tab-view" id="view-billing">
+          <div class="view-header-row">
+            <div>
+              <h2 class="view-heading">Plans &amp; Usage Limits</h2>
+              <p class="view-subheading">View active quota limits and pricing tier configurations.</p>
+            </div>
+            <button type="button" class="btn-primary" id="btn-open-create-plan-modal" data-permission="plans:manage">
+              + Add Pricing Plan
+            </button>
+          </div>
+
+          <div class="usage-summary-grid" id="usage-cards-container"></div>
+
+          <div class="section-title-sub mt-24">AVAILABLE PLANS</div>
+          <div class="table-container">
+            <table class="data-table" id="plans-table">
+              <thead>
+                <tr>
+                  <th>Plan Name</th>
+                  <th>Price</th>
+                  <th>Billing Interval</th>
+                  <th>Agents Limit</th>
+                  <th>Runs Limit</th>
+                  <th>Scenarios Limit</th>
+                  <th>Data Retention</th>
+                  <th>Status</th>
+                  <th class="text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="plans-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="tab-view" id="view-settings">
+          <div class="view-header-row">
+            <div>
+              <h2 class="view-heading">Workspace &amp; Emergency Controls</h2>
+              <p class="view-subheading">Manage emergency testing pause and demo data.</p>
+            </div>
+          </div>
+
+          <div class="danger-panel-card">
+            <div class="danger-panel-header">
+              <div class="danger-badge">SAFETY CONTROL</div>
+              <h3>Emergency Testing Pause</h3>
+              <p>Immediately pause all new agent test runs across the workspace.</p>
+            </div>
+
+            <div class="kill-switch-controls">
+              <div class="kill-switch-status-box">
+                <span class="status-label">Current Status:</span>
+                <span class="status-badge-inline" id="kill-switch-badge">Active (All Tests Allowed)</span>
+              </div>
+
+              <div class="kill-switch-form-row">
+                <input type="text" id="kill-switch-reason-input" class="form-input flex-1"
+                  placeholder="Enter reason for pausing or resuming testing...">
+                <button type="button" class="btn-danger" id="btn-toggle-kill-switch" data-permission="kill_switch:manage">
+                  Pause All Testing
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mt-24">
+            <div class="card-header-flex">
+              <div>
+                <h3 class="card-title">Load Sample Data</h3>
+                <p class="card-subtitle">Populate workspace with sample agents, test runs, and safety alerts.</p>
+              </div>
+              <button type="button" class="btn-secondary" id="btn-trigger-seed" data-permission="agents:write">
+                ⚡ Load Sample Data
+              </button>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+
+  <!-- ═════════════════════════════════════════════════════════════════════
+       MODALS & POPUPS
+       ═════════════════════════════════════════════════════════════════════ -->
+
+  <!-- POPUP MODAL: Confirm Saving Agent to Database from Playground -->
+  <div class="modal-backdrop hidden" id="modal-save-agent-confirm">
+    <div class="modal-dialog modal-compact">
+      <div class="modal-header">
+        <h3>Save Agent to Database?</h3>
+        <button type="button" class="modal-close" data-close-modal>&times;</button>
+      </div>
+      <div class="modal-body" style="text-align: center; padding: 24px 20px;">
+        <div style="font-size: 2.4rem; margin-bottom: 12px;">🤖</div>
+        <p style="font-size: 0.95rem; color: var(--text-primary); line-height: 1.5; margin-bottom: 8px;">
+          You just tested an unregistered agent URL:
+        </p>
+        <div
+          style="background: var(--bg-card-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 8px 12px; margin-bottom: 16px;">
+          <code id="save-agent-prompt-url"
+            style="color: var(--accent-indigo); font-weight: 600;">http://127.0.0.1:8001</code>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-secondary);">
+          Would you like to register and save this agent to your database for future 1-click testing?
+        </p>
+      </div>
+      <div class="modal-footer" style="justify-content: center; gap: 12px;">
+        <button type="button" class="btn-secondary" id="btn-dismiss-save-agent">No, Just Testing</button>
+        <button type="button" class="btn-primary" id="btn-confirm-save-agent">✓ Save to Database</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 1: Quick Scan / Evaluate Agent -->
+  <div class="modal-backdrop hidden" id="modal-quick-scan">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Test an Agent</h3>
+        <button type="button" class="modal-close" data-close-modal>&times;</button>
+      </div>
+      <form id="form-quick-scan" class="modal-form">
+        <div class="form-group">
+          <label>Agent Target URL (e.g. http://127.0.0.1:8001 or leave empty for Demo Agent)</label>
+          <input type="text" id="m-scan-url" class="form-input" placeholder="http://127.0.0.1:8001">
+        </div>
+        <div class="form-group">
+          <label>Agent Name</label>
+          <input type="text" id="m-scan-name" class="form-input" value="Support Agent" required>
+        </div>
+        <div class="form-group">
+          <label>Token Budget</label>
+          <input type="number" id="m-scan-budget" class="form-input" value="5000">
+        </div>
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="m-scan-hardened"> Safe / Hardened Mode
+          </label>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" data-close-modal>Cancel</button>
+          <button type="submit" class="btn-primary" id="m-btn-run-scan">
+            Start Test
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Start Test Run -->
+  <div class="modal-backdrop hidden" id="modal-dispatch-run">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Start Assessment Run</h3>
+        <button type="button" class="modal-close" data-close-modal>&times;</button>
+      </div>
+      <form id="form-dispatch-run" class="modal-form">
+        <div class="form-group">
+          <label>Select Assessment Template</label>
+          <select id="m-dispatch-assessment" class="form-select" required></select>
+        </div>
+        <div class="form-group">
+          <label>Test Pack Name</label>
+          <input type="text" id="m-dispatch-pack" class="form-input" value="core-v1" required>
+        </div>
+        <div class="form-group">
+          <label>Select Safety Rules to Evaluate</label>
+          <div class="scenarios-checkbox-grid" id="m-dispatch-scenarios-list"></div>
+        </div>
+        <div class="form-group">
+          <label>Tracking Reference (Optional)</label>
+          <input type="text" id="m-dispatch-idempotency" class="form-input" placeholder="run-reference-001">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" data-close-modal>Cancel</button>
+          <button type="submit" class="btn-primary" id="m-btn-dispatch-run">
+            Start Run
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Register New Agent into .db -->
+  <div class="modal-backdrop hidden" id="modal-register-agent">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Register New Agent Target</h3>
+        <button type="button" class="modal-close" data-close-modal>&times;</button>
+      </div>
+      <form id="form-register-agent" class="modal-form">
+        <div class="form-group">
+          <label>Agent Name</label>
+          <input type="text" id="m-agent-name" class="form-input" placeholder="e.g. Bookstore Concierge" required>
+        </div>
+        <div class="form-group">
+          <label>Connection Type</label>
+          <select id="m-agent-adapter" class="form-select">
+            <option value="http">Live API / Remote URL (e.g. http://127.0.0.1:8001)</option>
+            <option value="synthetic">Built-in Demo Simulation</option>
+          </select>
+        </div>
+        <div class="form-group" id="m-agent-url-group">
+          <label>Endpoint URL (Required for Live API)</label>
+          <input type="text" id="m-agent-endpoint" class="form-input" placeholder="http://127.0.0.1:8001">
+        </div>
+        <div class="form-group" id="m-agent-hosts-group">
+          <label>Allowed Hostnames (Optional, comma-separated)</label>
+          <input type="text" id="m-agent-hosts" class="form-input" placeholder="127.0.0.1, localhost">
+        </div>
+        <div class="form-group">
+          <label>Agent Purpose &amp; Scope Description</label>
+          <textarea id="m-agent-scope" class="form-input" rows="2"
+            placeholder="Describe what this agent does and its allowed boundaries..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="m-agent-auth" checked required> I confirm I am authorized to test this agent
+            endpoint
+          </label>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" data-close-modal>Cancel</button>
+          <button type="submit" class="btn-primary">Save to Database</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 4: Create Assessment Scope -->
+  <div class="modal-backdrop hidden" id="modal-create-assessment">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Create Assessment Template</h3>
+        <button type="button" class="modal-close" data-close-modal>&times;</button>
+      </div>
+      <form id="form-create-assessment" class="modal-form">
+        <div class="form-group">
+          <label>Assessment Title</label>
+          <input type="text" id="m-assess-title" class="form-input" placeholder="e.g. Tool Safety & Boundary Audit"
+            required>
+        </div>
+        <div class="form-group">
+          <label>Select Target Agent</label>
+          <select id="m-assess-agent" class="form-select" required></select>
+        </div>
+        <div class="form-group">
+          <label>Evaluation Scope Description</label>
+          <textarea id="m-assess-scope" class="form-input" rows="3"
+            placeholder="Define safety requirements and policies to check..." required></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" data-close-modal>Cancel</button>
+          <button type="submit" class="btn-primary">Save Assessment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 5: Review Finding -->
+  <div class="modal-backdrop hidden" id="modal-review-finding">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <h3>Review Security Alert</h3>
+          <span class="finding-id-tag" id="m-review-finding-id"></span>
+        </div>
+        <button type="button" class="modal-close" data-close-modal>&times;</button>
+      </div>
+      <form id="form-review-finding" class="modal-form">
+        <div class="finding-review-details-box" id="m-review-details-box"></div>
+        <div class="form-group">
+          <label>Review Decision</label>
+          <select id="m-review-decision" class="form-select" required>
+            <option value="confirmed">Confirmed (Verified Safety Issue)</option>
+            <option value="false_positive">Expected Behavior (Not a Real Issue)</option>
+            <option value="mitigated">Resolved (Fix Applied)</option>
+            <option value="accepted_risk">Accepted (Known Boundary)</option>
+            <option value="needs_investigation">Needs Investigation</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Review Notes / Explanation</label>
+          <textarea id="m-review-reason" class="form-input" rows="3" placeholder="Explain your decision..."
+            required></textarea>
+        </div>
+        <div class="past-reviews-box" id="m-past-reviews-container"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" data-close-modal>Cancel</button>
+          <button type="submit" class="btn-primary">Submit Decision</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 6: Generate Report -->
+  <div class="modal-backdrop hidden" id="modal-generate-report">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Generate Official Report</h3>
+        <button type="button" class="modal-close" data-close-modal>&times;</button>
+      </div>
+      <form id="form-generate-report" class="modal-form">
+        <input type="hidden" id="m-report-run-id">
+        <div class="form-group">
+          <label>Select Format</label>
+          <select id="m-report-format" class="form-select">
+            <option value="json">Machine-Readable JSON Report</option>
+            <option value="pdf">Printable Document / Text Report</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" data-close-modal>Cancel</button>
+          <button type="submit" class="btn-primary">Generate &amp; Download</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 7: Configure Pricing Plan -->
+  <div class="modal-backdrop hidden" id="modal-create-plan">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Configure Plan Tier</h3>
+        <button type="button" class="modal-close" data-close-modal>&times;</button>
+      </div>
+      <form id="form-create-plan" class="modal-form">
+        <div class="form-group">
+          <label>Plan Name</label>
+          <input type="text" id="m-plan-name" class="form-input" placeholder="e.g. Professional Plan" required>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label>Price in GBP (£ or pence, e.g. 500 for £500)</label>
+            <input type="number" id="m-plan-price" class="form-input" value="500" placeholder="e.g. 500" required>
+          </div>
+          <div class="form-group">
+            <label>Billing Interval</label>
+            <select id="m-plan-interval" class="form-select">
+              <option value="monthly">Monthly</option>
+              <option value="annual">Annual</option>
+              <option value="one_off">One-Time</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label>Included Agents</label>
+            <input type="number" id="m-plan-agents" class="form-input" value="25">
+          </div>
+          <div class="form-group">
+            <label>Maximum Runs</label>
+            <input type="number" id="m-plan-runs" class="form-input" value="100">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" data-close-modal>Cancel</button>
+          <button type="submit" class="btn-primary">Save Plan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 8: Compare Runs Modal -->
+  <div class="modal-backdrop hidden" id="modal-compare-runs">
+    <div class="modal-dialog modal-wide">
+      <div class="modal-header">
+        <h3>Compare Two Test Runs</h3>
+        <button type="button" class="modal-close" data-close-modal>&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="compare-selectors-row">
+          <div class="form-group flex-1">
+            <label>Current Test Run</label>
+            <select id="compare-modal-current-run" class="form-select"></select>
+          </div>
+          <div class="form-group flex-1">
+            <label>Baseline Test Run</label>
+            <select id="compare-modal-baseline-run" class="form-select"></select>
+          </div>
+          <div class="form-group">
+            <label>&nbsp;</label>
+            <button type="button" class="btn-primary" id="btn-execute-comparison">Compare</button>
+          </div>
+        </div>
+        <div id="compare-results-container" class="mt-16"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 9: Evidence & Trace Modal -->
+  <div class="modal-backdrop hidden" id="modal-evidence">
+    <div class="modal-dialog modal-wide">
+      <div class="modal-header">
+        <div>
+          <h3 id="evidence-modal-title">Diagnostic Details &amp; Activity Log</h3>
+          <span class="finding-id-tag" id="evidence-modal-scenario"></span>
+        </div>
+        <button type="button" class="modal-close" data-close-modal>&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="evidence-modal-visual" style="margin-bottom: 16px;"></div>
+        <details style="margin-top: 14px; border-top: 1px solid var(--border-subtle); padding-top: 10px;">
+          <summary style="font-size: 0.8rem; color: var(--text-muted); cursor: pointer; user-select: none;">
+            🔍 View Raw Telemetry Trace (JSON)
+          </summary>
+          <pre class="json-code-block" style="margin-top: 10px;"><code id="evidence-modal-code"></code></pre>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notifications -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="auth.js"></script>
+  <script src="team.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>
