@@ -150,7 +150,10 @@ def start_all_services() -> None:
         AI_OPS_PORT,
         [npm, "run", "dev", "--", "-p", str(AI_OPS_PORT)],
         p2 / "web",
-        {"NEXT_PUBLIC_BASE_PATH": "/AI-operations-Diagonostic"},
+        {
+            "NEXT_PUBLIC_BASE_PATH": "/AI-operations-Diagonostic",
+            "NEXT_PUBLIC_API_URL": f"http://127.0.0.1:{AI_OPS_API_PORT}",
+        },
     )
 
     # 3. Construction-variation-tracker
@@ -210,7 +213,7 @@ def start_all_services() -> None:
         p5 / "frontend",
         {
             "VITE_BASE_PATH": "/Industry-Specific-Lead-to-Order-Agent/",
-            "VITE_API_URL": f"http://127.0.0.1:{LEAD_TO_ORDER_API_PORT}",
+            "VITE_API_URL": f"http://127.0.0.1:{LEAD_TO_ORDER_API_PORT}/v1",
         },
     )
 
@@ -228,7 +231,10 @@ def start_all_services() -> None:
         PROCUREAI_PORT,
         [npm, "run", "dev", "--", "-p", str(PROCUREAI_PORT)],
         p6 / "apps" / "web",
-        {"NEXT_PUBLIC_BASE_PATH": "/Procurement-Quote-Comparison-Agent"},
+        {
+            "NEXT_PUBLIC_BASE_PATH": "/Procurement-Quote-Comparison-Agent",
+            "NEXT_PUBLIC_API_URL": f"http://127.0.0.1:{PROCUREAI_API_PORT}",
+        },
     )
 
 
