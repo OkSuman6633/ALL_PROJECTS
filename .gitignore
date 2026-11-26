@@ -32,3 +32,4 @@ build/
 *.sqlite
 *.sqlite3
 *.log
+gateway/logs/

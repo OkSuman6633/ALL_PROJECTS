@@ -1,28 +1,47 @@
-"""Zero-dependency Python reverse proxy and portal server for All_Projects.
+"""Zero-dependency Python reverse proxy, auto-launcher, and portal server for All_Projects.
 
-Serves gateway/index.html at `/` and routes `/<project-name>/...` to the
-corresponding local backend/frontend port. Also inspects the Referer header
-so root-relative assets/APIs (e.g. `/v1/...`, `/app.js`) still resolve to the
-originating project.
+Starts all 6 projects (backends + frontends) automatically when launched on the
+main port (8080), serves gateway/index.html at `/`, and routes `/<project-name>/...`
+to the corresponding local port. Pass `--no-autostart` (or set GATEWAY_AUTOSTART=0)
+to run the proxy alone.
 """
 
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
+import atexit
 import http.client
 import os
+import shutil
+import socket
+import subprocess
+import sys
 
+ROOT_DIR = Path(__file__).resolve().parent.parent
 PORT = int(os.getenv("GATEWAY_PORT", "8080"))
 PORTAL_HTML = Path(__file__).with_name("index.html")
+LOG_DIR = Path(__file__).with_name("logs")
+
+AGENT_ASSURENCE_PORT = int(os.getenv("AGENT_ASSURENCE_PORT", "8000"))
+AI_OPS_API_PORT = int(os.getenv("AI_OPS_API_PORT", "8001"))
+AI_OPS_PORT = int(os.getenv("AI_OPS_PORT", "3001"))
+CONSTRUCTION_API_PORT = int(os.getenv("CONSTRUCTION_API_PORT", "8002"))
+CONSTRUCTION_PORT = int(os.getenv("CONSTRUCTION_PORT", "5173"))
+LEAKAGE_API_PORT = int(os.getenv("LEAKAGE_API_PORT", "8003"))
+LEAKAGE_PORT = int(os.getenv("LEAKAGE_PORT", "5174"))
+LEAD_TO_ORDER_API_PORT = int(os.getenv("LEAD_TO_ORDER_API_PORT", "8004"))
+LEAD_TO_ORDER_PORT = int(os.getenv("LEAD_TO_ORDER_PORT", "5175"))
+PROCUREAI_API_PORT = int(os.getenv("PROCUREAI_API_PORT", "8005"))
+PROCUREAI_PORT = int(os.getenv("PROCUREAI_PORT", "3002"))
 
 ROUTES: dict[str, tuple[str, int, bool]] = {
     # prefix: (host, port, strip_prefix)
-    "Agent_Assurence": ("127.0.0.1", int(os.getenv("AGENT_ASSURENCE_PORT", "8000")), True),
-    "AI-operations-Diagonostic": ("127.0.0.1", int(os.getenv("AI_OPS_PORT", "3001")), False),
-    "Construction-variation-tracker": ("127.0.0.1", int(os.getenv("CONSTRUCTION_PORT", "5173")), False),
-    "Contract-Invoice-Leakage-Finder": ("127.0.0.1", int(os.getenv("LEAKAGE_PORT", "5174")), False),
-    "Industry-Specific-Lead-to-Order-Agent": ("127.0.0.1", int(os.getenv("LEAD_TO_ORDER_PORT", "5175")), False),
-    "Procurement-Quote-Comparison-Agent": ("127.0.0.1", int(os.getenv("PROCUREAI_PORT", "3002")), False),
+    "Agent_Assurence": ("127.0.0.1", AGENT_ASSURENCE_PORT, True),
+    "AI-operations-Diagonostic": ("127.0.0.1", AI_OPS_PORT, False),
+    "Construction-variation-tracker": ("127.0.0.1", CONSTRUCTION_PORT, False),
+    "Contract-Invoice-Leakage-Finder": ("127.0.0.1", LEAKAGE_PORT, False),
+    "Industry-Specific-Lead-to-Order-Agent": ("127.0.0.1", LEAD_TO_ORDER_PORT, False),
+    "Procurement-Quote-Comparison-Agent": ("127.0.0.1", PROCUREAI_PORT, False),
 }
 
 HOP_BY_HOP = {
@@ -35,6 +54,168 @@ HOP_BY_HOP = {
     "transfer-encoding",
     "upgrade",
 }
+
+_CHILDREN: list[tuple[str, subprocess.Popen]] = []
+
+
+def _python_for(project_dir: Path) -> str:
+    """Return project venv python if present, otherwise current sys.executable."""
+    for rel in (".venv/Scripts/python.exe", "api/.venv/Scripts/python.exe", ".venv/bin/python", "api/.venv/bin/python"):
+        candidate = project_dir / rel
+        if candidate.exists():
+            return str(candidate)
+    return sys.executable
+
+
+def _npm_cmd() -> str:
+    return shutil.which("npm.cmd") or shutil.which("npm") or "npm"
+
+
+def _port_open(port: int) -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.settimeout(0.3)
+        return sock.connect_ex(("127.0.0.1", port)) == 0
+
+
+def _spawn(name: str, port: int, cmd: list[str], cwd: Path, extra_env: dict[str, str] | None = None) -> None:
+    if _port_open(port):
+        print(f"  [=] {name} already listening on :{port}")
+        return
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    log_file = open(LOG_DIR / f"{name}.log", "w", encoding="utf-8")
+    env = os.environ.copy()
+    if extra_env:
+        env.update(extra_env)
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            cwd=str(cwd),
+            env=env,
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+        )
+        _CHILDREN.append((name, proc))
+        print(f"  [+] Started {name} (:{port}, PID {proc.pid}) -> gateway/logs/{name}.log")
+    except OSError as exc:
+        log_file.close()
+        print(f"  [!] Failed to start {name} (:{port}): {exc}")
+
+
+def stop_all_services() -> None:
+    for name, proc in _CHILDREN:
+        if proc.poll() is None:
+            proc.terminate()
+            try:
+                proc.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+            print(f"  [-] Stopped {name}")
+    _CHILDREN.clear()
+
+
+def start_all_services() -> None:
+    npm = _npm_cmd()
+    print("Starting all project services...")
+
+    # 1. Agent_Assurence
+    p1 = ROOT_DIR / "Agent_Assurence"
+    _spawn(
+        "agent-assurence",
+        AGENT_ASSURENCE_PORT,
+        [_python_for(p1), "run.py"],
+        p1,
+        {"PORT": str(AGENT_ASSURENCE_PORT)},
+    )
+
+    # 2. AI-operations-Diagonostic
+    p2 = ROOT_DIR / "AI-operations-Diagonostic"
+    _spawn(
+        "ai-ops-api",
+        AI_OPS_API_PORT,
+        [_python_for(p2), "-m", "uvicorn", "app.main:app", "--port", str(AI_OPS_API_PORT)],
+        p2 / "api",
+    )
+    _spawn(
+        "ai-ops-web",
+        AI_OPS_PORT,
+        [npm, "run", "dev", "--", "-p", str(AI_OPS_PORT)],
+        p2 / "web",
+        {"NEXT_PUBLIC_BASE_PATH": "/AI-operations-Diagonostic"},
+    )
+
+    # 3. Construction-variation-tracker
+    p3 = ROOT_DIR / "Construction-variation-tracker"
+    _spawn(
+        "construction-api",
+        CONSTRUCTION_API_PORT,
+        [_python_for(p3), "-m", "uvicorn", "app.main:app", "--port", str(CONSTRUCTION_API_PORT)],
+        p3 / "backend",
+    )
+    _spawn(
+        "construction-web",
+        CONSTRUCTION_PORT,
+        [npm, "run", "dev", "--", "--port", str(CONSTRUCTION_PORT)],
+        p3 / "frontend",
+        {
+            "VITE_BASE_PATH": "/Construction-variation-tracker/",
+            "VITE_API_URL": f"http://127.0.0.1:{CONSTRUCTION_API_PORT}",
+        },
+    )
+
+    # 4. Contract-Invoice-Leakage-Finder
+    p4 = ROOT_DIR / "Contract-Invoice-Leakage-Finder"
+    _spawn(
+        "leakage-api",
+        LEAKAGE_API_PORT,
+        [_python_for(p4), "-m", "uvicorn", "backend.app.main:app", "--host", "127.0.0.1", "--port", str(LEAKAGE_API_PORT)],
+        p4,
+    )
+    _spawn(
+        "leakage-web",
+        LEAKAGE_PORT,
+        [npm, "run", "dev", "--", "--port", str(LEAKAGE_PORT)],
+        p4 / "frontend",
+        {
+            "VITE_BASE_PATH": "/Contract-Invoice-Leakage-Finder/",
+            "VITE_API_URL": f"http://127.0.0.1:{LEAKAGE_API_PORT}",
+        },
+    )
+
+    # 5. Industry-Specific-Lead-to-Order-Agent
+    p5 = ROOT_DIR / "Industry-Specific-Lead-to-Order-Agent"
+    _spawn(
+        "lead-to-order-api",
+        LEAD_TO_ORDER_API_PORT,
+        [_python_for(p5), "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", str(LEAD_TO_ORDER_API_PORT)],
+        p5 / "backend",
+    )
+    _spawn(
+        "lead-to-order-web",
+        LEAD_TO_ORDER_PORT,
+        [npm, "run", "dev", "--", "--port", str(LEAD_TO_ORDER_PORT)],
+        p5 / "frontend",
+        {
+            "VITE_BASE_PATH": "/Industry-Specific-Lead-to-Order-Agent/",
+            "VITE_API_URL": f"http://127.0.0.1:{LEAD_TO_ORDER_API_PORT}",
+        },
+    )
+
+    # 6. Procurement-Quote-Comparison-Agent
+    p6 = ROOT_DIR / "Procurement-Quote-Comparison-Agent"
+    _spawn(
+        "procureai-api",
+        PROCUREAI_API_PORT,
+        [_python_for(p6), "-m", "uvicorn", "app.main:app", "--app-dir", "services/api", "--host", "0.0.0.0", "--port", str(PROCUREAI_API_PORT)],
+        p6,
+        {"PYTHONPATH": "services/api"},
+    )
+    _spawn(
+        "procureai-web",
+        PROCUREAI_PORT,
+        [npm, "run", "dev", "--", "-p", str(PROCUREAI_PORT)],
+        p6 / "apps" / "web",
+        {"NEXT_PUBLIC_BASE_PATH": "/Procurement-Quote-Comparison-Agent"},
+    )
 
 
 def resolve_target(path: str, referer: str | None) -> tuple[str, int, str] | None:
@@ -149,9 +330,21 @@ class GatewayHandler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
+    autostart = "--no-autostart" not in sys.argv and os.getenv("GATEWAY_AUTOSTART", "1") != "0"
+    if autostart:
+        atexit.register(stop_all_services)
+        start_all_services()
+
     server = ThreadingHTTPServer(("0.0.0.0", PORT), GatewayHandler)
-    print(f"All_Projects gateway listening on http://localhost:{PORT}")
+    print(f"\nAll_Projects gateway listening on http://localhost:{PORT}")
     print("Routes:")
     for name, (h, p, _) in ROUTES.items():
         print(f"  http://localhost:{PORT}/{name}/ -> http://{h}:{p}")
-    server.serve_forever()
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\nShutting down gateway and child services...")
+    finally:
+        server.server_close()
+        if autostart:
+            stop_all_services()
