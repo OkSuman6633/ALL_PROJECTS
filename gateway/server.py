@@ -131,7 +131,10 @@ def start_all_services() -> None:
         AGENT_ASSURENCE_PORT,
         [_python_for(p1), "run.py"],
         p1,
-        {"PORT": str(AGENT_ASSURENCE_PORT)},
+        {
+            "PORT": str(AGENT_ASSURENCE_PORT),
+            "AUTH_DISABLED": os.getenv("AGENT_ASSURENCE_AUTH_DISABLED", "false"),
+        },
     )
 
     # 2. AI-operations-Diagonostic

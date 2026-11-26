@@ -68,12 +68,13 @@ function setupThemeToggle() {
   }
 
   function applyTheme(theme) {
+    document.body.classList.remove('light-theme', 'dark-theme');
     if (theme === 'light') {
-      document.body.className = 'light-theme';
+      document.body.classList.add('light-theme');
       if (icon) icon.textContent = '🌙';
       if (label) label.textContent = 'Dark Mode';
     } else {
-      document.body.className = 'dark-theme';
+      document.body.classList.add('dark-theme');
       if (icon) icon.textContent = '☀️';
       if (label) label.textContent = 'Light Mode';
     }
