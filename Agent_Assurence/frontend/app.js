@@ -1041,7 +1041,7 @@ window.openEvidenceTrace = (scenarioId, title) => {
 
 async function loadAgents() {
   try {
-    const res = await fetch(`${ API_BASE } /v1/agents`);
+    const res = await fetch(`${API_BASE}/v1/agents`);
     if (!res.ok) return;
     registeredAgents = await res.json();
 
@@ -1141,7 +1141,7 @@ window.deleteAgentFromDatabase = async (agentId, agentName) => {
     return;
   }
   try {
-    const res = await fetch(`${ API_BASE } /v1/agents / ${ agentId } `, {
+    const res = await fetch(`${API_BASE}/v1/agents/${agentId}`, {
       method: 'DELETE',
     });
     if (!res.ok) throw new Error('Delete failed');
@@ -1154,7 +1154,7 @@ window.deleteAgentFromDatabase = async (agentId, agentName) => {
 
 async function loadAssessments() {
   try {
-    const res = await fetch(`${ API_BASE } /v1/assessments`);
+    const res = await fetch(`${API_BASE}/v1/assessments`);
     if (!res.ok) return;
     registeredAssessments = await res.json();
     renderAssessmentsTable(registeredAssessments);
@@ -1201,7 +1201,7 @@ window.openDispatchModalWithAssessment = (assessmentId) => {
 
 async function loadAuditEvents() {
   try {
-    const res = await fetch(`${ API_BASE } /v1/audit - events`);
+    const res = await fetch(`${API_BASE}/v1/audit-events`);
     if (!res.ok) return;
     const events = await res.json();
     renderAuditTable(events);
@@ -1238,8 +1238,8 @@ function renderAuditTable(events) {
 async function loadBilling() {
   try {
     const [usageRes, plansRes] = await Promise.all([
-      fetch(`${ API_BASE } /v1/usage`),
-      fetch(`${ API_BASE } /v1/plans`),
+      fetch(`${API_BASE}/v1/usage`),
+      fetch(`${API_BASE}/v1/plans`),
     ]);
 
     let activePlanId = null;
@@ -1326,7 +1326,7 @@ function renderPlansTable(plans, activePlanId) {
 
 window.switchPlan = async function(planId, planName) {
   try {
-    const res = await fetch(`${ API_BASE } /v1/usage / plan / ${ encodeURIComponent(planId) } `, {
+    const res = await fetch(`${API_BASE}/v1/usage/plan/${encodeURIComponent(planId)}`, {
       method: 'PUT',
       credentials: 'include',
     });
@@ -1360,7 +1360,7 @@ function setupKillSwitch() {
 
   async function refreshKillSwitch() {
     try {
-      const res = await fetch(`${ API_BASE } /v1/kill -switch`);
+      const res = await fetch(`${API_BASE}/v1/kill-switch`);
       if (!res.ok) return; // 401 before the session exists: keep the last known state
       applyStatus(await res.json());
     } catch (err) {
@@ -1382,7 +1382,7 @@ function setupKillSwitch() {
     const nextState = !killSwitchEngaged;
 
     try {
-      const res = await fetch(`${ API_BASE } /v1/kill -switch`, {
+      const res = await fetch(`${API_BASE}/v1/kill-switch`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled: nextState, reason: reason }),
@@ -1417,7 +1417,7 @@ function setupKillSwitch() {
   // Demo Seed Button
   document.getElementById('btn-trigger-seed').addEventListener('click', async () => {
     try {
-      const res = await fetch(`${ API_BASE } /v1/demo / seed`, { method: 'POST' });
+      const res = await fetch(`${API_BASE}/v1/demo/seed`, { method: 'POST' });
       if (res.ok) {
         showToast('Sample workspace data loaded successfully!', 'success');
         await refreshAllData();
@@ -1441,7 +1441,7 @@ function setupMockAgentHarness() {
     try {
       btn.disabled = true;
       btn.textContent = 'Sending...';
-      const res = await fetch(`${ API_BASE } /v1/agent / run ? hardened = ${ hardened } `, {
+      const res = await fetch(`${API_BASE}/v1/agent/run?hardened=${hardened}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ scenario_id: sid }),
@@ -1463,7 +1463,7 @@ function setupMockAgentHarness() {
 
 async function loadScenarios() {
   try {
-    const res = await fetch(`${ API_BASE } /v1/scenarios`);
+    const res = await fetch(`${API_BASE}/v1/scenarios`);
     if (!res.ok) return;
     allScenarios = await res.json();
     populateScenariosCheckboxes();
@@ -1556,7 +1556,7 @@ function setupModals() {
     }
 
     try {
-      const res = await fetch(`${ API_BASE } /v1/assessments / ${ assessId }/runs`, {
+      const res = await fetch(`${API_BASE}/v1/assessments/${assessId}/runs`, {
 method: 'POST',
   headers: {
   'Content-Type': 'application/json',
