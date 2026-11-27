@@ -1,0 +1,175 @@
+map $http_x_forwarded_proto $forwarded_proto {
+    default $http_x_forwarded_proto;
+    ""      $scheme;
+}
+
+server {
+    listen __PORT__;
+    server_name _;
+
+    client_max_body_size 32m;
+
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_proxied any;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml text/javascript;
+
+    # Cloud Run health probes
+    location = /health {
+        default_type application/json;
+        return 200 '{"status":"ok","service":"all-projects-hub","projects":6}';
+    }
+
+    location = /healthz {
+        default_type application/json;
+        return 200 '{"status":"ok"}';
+    }
+
+    # Unified Portal Hub
+    location = / {
+        root /app/gateway;
+        index index.html;
+    }
+
+    location = /index.html {
+        root /app/gateway;
+    }
+
+    # 1. Agent_Assurence (FastAPI :8000 serves both static UI and /v1 API)
+    location = /Agent_Assurence {
+        return 302 /Agent_Assurence/;
+    }
+    location /Agent_Assurence/ {
+        proxy_pass http://127.0.0.1:8000/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_buffering off;
+    }
+
+    # 2. AI-operations-Diagonostic (Next.js :3001 + FastAPI :8001)
+    location = /AI-operations-Diagonostic/api {
+        return 301 /AI-operations-Diagonostic/api/;
+    }
+    location /AI-operations-Diagonostic/api/ {
+        proxy_pass http://127.0.0.1:8001/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_buffering off;
+    }
+    location /AI-operations-Diagonostic {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+
+    # 3. Construction-variation-tracker (Static Vite SPA + FastAPI :8002)
+    location = /Construction-variation-tracker {
+        return 302 /Construction-variation-tracker/;
+    }
+    location = /Construction-variation-tracker/api {
+        return 301 /Construction-variation-tracker/api/;
+    }
+    location /Construction-variation-tracker/api/ {
+        proxy_pass http://127.0.0.1:8002/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_buffering off;
+    }
+    location /Construction-variation-tracker/ {
+        root /usr/share/nginx/static;
+        try_files $uri $uri/ /Construction-variation-tracker/index.html;
+    }
+
+    # 4. Contract-Invoice-Leakage-Finder (Static Vite SPA + FastAPI :8003)
+    location = /Contract-Invoice-Leakage-Finder {
+        return 302 /Contract-Invoice-Leakage-Finder/;
+    }
+    location = /Contract-Invoice-Leakage-Finder/api {
+        return 301 /Contract-Invoice-Leakage-Finder/api/;
+    }
+    location /Contract-Invoice-Leakage-Finder/api/ {
+        proxy_pass http://127.0.0.1:8003/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_buffering off;
+    }
+    location /Contract-Invoice-Leakage-Finder/ {
+        root /usr/share/nginx/static;
+        try_files $uri $uri/ /Contract-Invoice-Leakage-Finder/index.html;
+    }
+
+    # 5. Industry-Specific-Lead-to-Order-Agent (Static Vite SPA + FastAPI :8004)
+    location = /Industry-Specific-Lead-to-Order-Agent {
+        return 302 /Industry-Specific-Lead-to-Order-Agent/;
+    }
+    location = /Industry-Specific-Lead-to-Order-Agent/api {
+        return 301 /Industry-Specific-Lead-to-Order-Agent/api/;
+    }
+    location /Industry-Specific-Lead-to-Order-Agent/api/ {
+        proxy_pass http://127.0.0.1:8004/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_buffering off;
+    }
+    location /Industry-Specific-Lead-to-Order-Agent/ {
+        root /usr/share/nginx/static;
+        try_files $uri $uri/ /Industry-Specific-Lead-to-Order-Agent/index.html;
+    }
+
+    # 6. Procurement-Quote-Comparison-Agent (Next.js :3002 + FastAPI :8005)
+    location = /Procurement-Quote-Comparison-Agent/api {
+        return 301 /Procurement-Quote-Comparison-Agent/api/;
+    }
+    location /Procurement-Quote-Comparison-Agent/api/ {
+        proxy_pass http://127.0.0.1:8005/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_buffering off;
+    }
+    location /Procurement-Quote-Comparison-Agent {
+        proxy_pass http://127.0.0.1:3002;
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+}

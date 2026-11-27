@@ -12,7 +12,8 @@ export const authManager = authConfigured
       authority,
       client_id: clientId,
       redirect_uri:
-        import.meta.env.VITE_OIDC_REDIRECT_URI || `${window.location.origin}/auth/callback`,
+        import.meta.env.VITE_OIDC_REDIRECT_URI ||
+        `${window.location.origin}${(import.meta.env.BASE_URL || "/").replace(/\/+$/, "")}/auth/callback`,
       response_type: "code",
       scope: import.meta.env.VITE_OIDC_SCOPE || "openid profile email",
       automaticSilentRenew: true,

@@ -387,7 +387,8 @@ export const DocumentUpload: React.FC = () => {
 
   const handleDownloadDocument = (docId: string, filename: string) => {
     if (!selectedCaseId) return;
-    const downloadUrl = `/v1/cases/${selectedCaseId}/documents/${docId}/download`;
+    const apiBase = import.meta.env.VITE_API_URL || '';
+    const downloadUrl = `${apiBase}/v1/cases/${selectedCaseId}/documents/${docId}/download`;
     const token = localStorage.getItem('token') || localStorage.getItem('access_token');
 
     // Trigger browser download with authorization
