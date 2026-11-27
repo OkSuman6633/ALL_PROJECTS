@@ -40,9 +40,10 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; roles?: string[] }> 
 };
 
 export const App: React.FC = () => {
+  const basename = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '') || '/';
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={basename}>
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />

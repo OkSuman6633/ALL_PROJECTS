@@ -147,13 +147,15 @@ function App() {
         const mode = await api.authMode();
         if (cancelled) return;
         setLocalAuthEnabled(mode.local_password_enabled);
-        const isCallback = window.location.pathname === "/auth/callback";
+        const basePath = (import.meta.env.BASE_URL || "/").replace(/\/+$/, "");
+        const callbackPath = `${basePath}/auth/callback`;
+        const isCallback = window.location.pathname === callbackPath || window.location.pathname === "/auth/callback";
         const oidcSession = authManager
           ? isCallback
             ? await authManager.signinRedirectCallback()
             : await authManager.getUser()
           : null;
-        if (isCallback) window.history.replaceState({}, "", "/");
+        if (isCallback) window.history.replaceState({}, "", import.meta.env.BASE_URL || "/");
         if (oidcSession && !oidcSession.expired && oidcSession.access_token) {
           await connect(oidcSession.access_token, localStorage.getItem("cvea-tenant") ?? "");
           return;

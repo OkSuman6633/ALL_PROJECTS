@@ -1,0 +1,44 @@
+# Version control & editor
+.git/
+.gitignore
+.github/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Node build outputs & dependencies
+**/node_modules/
+**/.next/
+**/.next-dev/
+**/dist/
+**/build/
+**/.vite/
+
+# Python virtualenvs, caches & artifacts
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/*.egg-info/
+
+# Local databases, logs, secrets & scratch
+**/*.db
+**/*.sqlite
+**/*.sqlite3
+**/*.log
+gateway/logs/
+**/.env
+**/.env.local
+**/.env.*.local
+**/scratch/
+AI-operations-Diagonostic/api/data/
+Construction-variation-tracker/backend/.local-data/
+Contract-Invoice-Leakage-Finder/storage/
+Industry-Specific-Lead-to-Order-Agent/backend/data/
+
+# Large documentation binaries not needed at runtime
+**/*.docx

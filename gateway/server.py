@@ -2,8 +2,8 @@
 
 Starts all 6 projects (backends + frontends) automatically when launched on the
 main port (8080), serves gateway/index.html at `/`, and routes `/<project-name>/...`
-to the corresponding local port. Pass `--no-autostart` (or set GATEWAY_AUTOSTART=0)
-to run the proxy alone.
+(plus `/<project-name>/api/...`) to the corresponding local port. Pass `--no-autostart`
+(or set GATEWAY_AUTOSTART=0) to run the proxy alone.
 """
 
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -11,6 +11,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 import atexit
 import http.client
+import json
 import os
 import shutil
 import socket
@@ -44,6 +45,22 @@ ROUTES: dict[str, tuple[str, int, bool]] = {
     "Procurement-Quote-Comparison-Agent": ("127.0.0.1", PROCUREAI_PORT, False),
 }
 
+API_ROUTES: dict[str, int] = {
+    "AI-operations-Diagonostic": AI_OPS_API_PORT,
+    "Construction-variation-tracker": CONSTRUCTION_API_PORT,
+    "Contract-Invoice-Leakage-Finder": LEAKAGE_API_PORT,
+    "Industry-Specific-Lead-to-Order-Agent": LEAD_TO_ORDER_API_PORT,
+    "Procurement-Quote-Comparison-Agent": PROCUREAI_API_PORT,
+}
+
+API_ROUTES: dict[str, tuple[str, int]] = {
+    "AI-operations-Diagonostic": ("127.0.0.1", AI_OPS_API_PORT),
+    "Construction-variation-tracker": ("127.0.0.1", CONSTRUCTION_API_PORT),
+    "Contract-Invoice-Leakage-Finder": ("127.0.0.1", LEAKAGE_API_PORT),
+    "Industry-Specific-Lead-to-Order-Agent": ("127.0.0.1", LEAD_TO_ORDER_API_PORT),
+    "Procurement-Quote-Comparison-Agent": ("127.0.0.1", PROCUREAI_API_PORT),
+}
+
 HOP_BY_HOP = {
     "connection",
     "keep-alive",
@@ -60,7 +77,14 @@ _CHILDREN: list[tuple[str, subprocess.Popen]] = []
 
 def _python_for(project_dir: Path) -> str:
     """Return project venv python if present, otherwise current sys.executable."""
-    for rel in (".venv/Scripts/python.exe", "api/.venv/Scripts/python.exe", ".venv/bin/python", "api/.venv/bin/python"):
+    for rel in (
+        ".venv/Scripts/python.exe",
+        "api/.venv/Scripts/python.exe",
+        "backend/.venv/Scripts/python.exe",
+        ".venv/bin/python",
+        "api/.venv/bin/python",
+        "backend/.venv/bin/python",
+    ):
         candidate = project_dir / rel
         if candidate.exists():
             return str(candidate)
@@ -152,7 +176,7 @@ def start_all_services() -> None:
         p2 / "web",
         {
             "NEXT_PUBLIC_BASE_PATH": "/AI-operations-Diagonostic",
-            "NEXT_PUBLIC_API_URL": f"http://127.0.0.1:{AI_OPS_API_PORT}",
+            "NEXT_PUBLIC_API_URL": "/AI-operations-Diagonostic/api",
         },
     )
 
@@ -175,12 +199,15 @@ def start_all_services() -> None:
         p3 / "frontend",
         {
             "VITE_BASE_PATH": "/Construction-variation-tracker/",
+            "VITE_API_BASE_URL": "/Construction-variation-tracker/api",
             "VITE_API_URL": f"http://127.0.0.1:{CONSTRUCTION_API_PORT}",
         },
     )
 
     # 4. Contract-Invoice-Leakage-Finder
     p4 = ROOT_DIR / "Contract-Invoice-Leakage-Finder"
+    if not (p4 / "leakage_finder.db").exists():
+        subprocess.run([_python_for(p4), "backend/seed_data.py"], cwd=str(p4), check=False)
     _spawn(
         "leakage-api",
         LEAKAGE_API_PORT,
@@ -194,7 +221,7 @@ def start_all_services() -> None:
         p4 / "frontend",
         {
             "VITE_BASE_PATH": "/Contract-Invoice-Leakage-Finder/",
-            "VITE_API_URL": f"http://127.0.0.1:{LEAKAGE_API_PORT}",
+            "VITE_API_URL": "/Contract-Invoice-Leakage-Finder/api",
         },
     )
 
@@ -213,7 +240,7 @@ def start_all_services() -> None:
         p5 / "frontend",
         {
             "VITE_BASE_PATH": "/Industry-Specific-Lead-to-Order-Agent/",
-            "VITE_API_URL": f"http://127.0.0.1:{LEAD_TO_ORDER_API_PORT}/v1",
+            "VITE_API_URL": "/Industry-Specific-Lead-to-Order-Agent/api/v1",
         },
     )
 
@@ -224,7 +251,10 @@ def start_all_services() -> None:
         PROCUREAI_API_PORT,
         [_python_for(p6), "-m", "uvicorn", "app.main:app", "--app-dir", "services/api", "--host", "0.0.0.0", "--port", str(PROCUREAI_API_PORT)],
         p6,
-        {"PYTHONPATH": "services/api"},
+        {
+            "PYTHONPATH": "services/api",
+            "FRONTEND_URL": "/Procurement-Quote-Comparison-Agent",
+        },
     )
     _spawn(
         "procureai-web",
@@ -233,7 +263,7 @@ def start_all_services() -> None:
         p6 / "apps" / "web",
         {
             "NEXT_PUBLIC_BASE_PATH": "/Procurement-Quote-Comparison-Agent",
-            "NEXT_PUBLIC_API_URL": f"http://127.0.0.1:{PROCUREAI_API_PORT}",
+            "NEXT_PUBLIC_API_URL": "/Procurement-Quote-Comparison-Agent/api",
         },
     )
 
@@ -243,6 +273,12 @@ def resolve_target(path: str, referer: str | None) -> tuple[str, int, str] | Non
     parsed = urlsplit(path)
     clean_path = parsed.path
     query = f"?{parsed.query}" if parsed.query else ""
+
+    for prefix, (host, port) in API_ROUTES.items():
+        api_base = f"/{prefix}/api"
+        if clean_path == api_base or clean_path.startswith(api_base + "/"):
+            rest = clean_path[len(api_base):] or "/"
+            return host, port, rest + query
 
     for prefix, (host, port, strip_prefix) in ROUTES.items():
         base = f"/{prefix}"
@@ -266,6 +302,16 @@ class GatewayHandler(BaseHTTPRequestHandler):
     """HTTP handler that serves the portal or proxies to a project."""
 
     def _handle_all(self) -> None:
+        if self.path in ("/health", "/healthz"):
+            body = json.dumps({"status": "ok", "service": "all-projects-gateway", "projects": len(ROUTES)}).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            if self.command != "HEAD":
+                self.wfile.write(body)
+            return
+
         if self.path in ("/", "/index.html"):
             body = PORTAL_HTML.read_bytes()
             self.send_response(200)
@@ -311,7 +357,7 @@ class GatewayHandler(BaseHTTPRequestHandler):
         fwd_headers["Host"] = f"{host}:{port}"
 
         try:
-            conn = http.client.HTTPConnection(host, port, timeout=30)
+            conn = http.client.HTTPConnection(host, port, timeout=120)
             conn.request(self.command, upstream_path, body=req_body, headers=fwd_headers)
             resp = conn.getresponse()
             resp_body = resp.read()
